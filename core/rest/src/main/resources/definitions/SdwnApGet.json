@@ -1,0 +1,67 @@
+{
+  "definitions": {
+    "ap": {
+      "type": "object",
+      "required": [
+        "name",
+        "ssid",
+        "bssid",
+        "port_no",
+        "frequency",
+        "clients",
+        "supported_frequencies",
+        "ht_capabilities"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "ssid": {
+          "type": "string"
+        },
+        "bssid": {
+          "type": "string",
+          "example": "00:0b:ad:c0:ff:ee"
+        },
+        "port_no": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "frequency": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "clients": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported_frequencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "frequency",
+              "max_tx_power"
+            ],
+            "properties": {
+              "frequency": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "max_tx_power": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/ap"
+  }
+}

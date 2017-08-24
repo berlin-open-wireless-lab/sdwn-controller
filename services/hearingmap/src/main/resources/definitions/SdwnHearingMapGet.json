@@ -1,0 +1,46 @@
+{
+  "definitions" : {
+    "entry" : {
+      "type": "object",
+      "properties" : {
+        "ap" : {
+          "type": "string"
+        },
+        "switch" : {
+          "type": "string"
+        },
+        "frequency" : {
+          "type": "integer",
+          "format": "int64"
+        },
+        "signal_strength" : {
+          "type": "integer",
+          "format": "int64"
+        },
+        "seconds_since" : {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    }
+  },
+  "type": "#/definitions/entry",
+  "example": {
+    "00:ba:dc:0f:fe:e0" : [
+      {
+        "ap" : "ap0",
+        "switch" : "00:00:00:00:00:00:00:01",
+        "frequency" : 5180,
+        "signal_strength" : -30,
+        "seconds_since" : 11
+      },
+      {
+        "ap" : "ap1",
+        "switch" : "00:00:00:00:00:00:00:02",
+        "frequency" : 5180,
+        "signal_strength" : -11,
+        "seconds_since" : 3
+      }
+    ]
+  }
+}

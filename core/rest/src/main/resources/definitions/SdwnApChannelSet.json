@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "required": [
+    "band",
+    "channel"
+  ],
+  "properties": {
+    "band": {
+      "type": "string",
+      "enum": [
+        "2GHz",
+        "5Ghz",
+        "60GHz"
+      ]
+    },
+    "channel": {
+      "type": "integer",
+      "format": "int32"
+    },
+    "beacon_count": {
+      "type": "integer",
+      "format": "int32"
+    }
+  },
+  "example": {
+    "band": "2GHz",
+    "channel": 1,
+    "beacon_count": 3
+  }
+}

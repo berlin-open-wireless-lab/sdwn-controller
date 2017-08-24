@@ -1,0 +1,198 @@
+{
+  "definitions": {
+    "switch": {
+      "type": "object",
+      "id": "#switch",
+      "required": [
+        "datapath_id",
+        "channel_id",
+        "manufacturer",
+        "hardware",
+        "software",
+        "datapath_desc",
+        "serial_no",
+        "role",
+        "access_points",
+        "frequency_bands"
+      ],
+      "properties": {
+        "datapath_id": {
+          "type": "string"
+        },
+        "channel_id": {
+          "type": "string"
+        },
+        "manufacturer": {
+          "type": "string"
+        },
+        "hardware": {
+          "type": "string"
+        },
+        "software": {
+          "type": "string"
+        },
+        "datapath_desc": {
+          "type": "string"
+        },
+        "serial_no": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "MASTER",
+            "EQUAL",
+            "SLAVE"
+          ]
+        },
+        "access_points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ap"
+          }
+        },
+        "frequency_bands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "number",
+              "frequencies"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "frequencies": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "frequency",
+                    "max_tx_power"
+                  ],
+                  "properties": {
+                    "frequency": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "max_tx_power": {
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "relative_of_switch": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "ap": {
+    "type": "object",
+    "id": "#ap",
+    "required": [
+      "name",
+      "ssid",
+      "bssid",
+      "port_no",
+      "frequency",
+      "clients"
+    ],
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "ssid": {
+        "type": "string"
+      },
+      "bssid": {
+        "type": "string",
+        "example": "00:0b:ad:c0:ff:ee"
+      },
+      "port_no": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "frequency": {
+        "type": "integer",
+        "format": "int64"
+      },
+      "clients": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/client"
+        }
+      }
+    }
+  },
+  "client": {
+    "type": "object",
+    "id": "#client",
+    "required": [
+      "mac",
+      "assoc_id",
+      "capabilities"
+    ],
+    "properties": {
+      "mac": {
+        "type": "string",
+        "example": "00:0b:ad:c0:ff:ee"
+      },
+      "assoc_id": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "capabilities": {
+        "type": "integer",
+        "format": "int32"
+      },
+      "crypto_keys": {
+        "type": "object",
+        "required": [
+          "kck",
+          "kek",
+          "pmk",
+          "tk",
+          "seq"
+        ],
+        "properties": {
+          "kck": {
+            "type": "string"
+          },
+          "kek": {
+            "type": "string"
+          },
+          "pmk": {
+            "type": "string"
+          },
+          "tk": {
+            "type": "string"
+          },
+          "seq": {
+            "type": "string"
+          }
+        }
+      },
+      "ht_capabilities": {
+        "type": "object",
+        "required": [
+        ]
+      },
+      "vht_capabilities": {
+        "type": "object",
+        "required": [
+        ]
+      }
+    }
+  },
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/switch"
+  }
+}

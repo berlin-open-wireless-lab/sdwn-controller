@@ -1,0 +1,109 @@
+{
+  "definitions": {
+    "client": {
+      "type": "object",
+      "required": [
+        "mac",
+        "ap",
+        "assoc_id",
+        "capabilities"
+      ],
+      "properties": {
+        "mac": {
+          "type": "string"
+        },
+        "ap": {
+          "type": "string"
+        },
+        "assoc_id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ESS", "IBSS", "CF_POLLABLE", "CF_POLL_REQUEST", "PRIVACY",
+              "SHORT_PREAMBLE", "PBCC", "CHANNEL_AGILITY", "SPECTRUM_MANAGEMENT",
+              "QoS", "SHORT_TIME_SLOT", "APSD", "RADIO_MEASUREMENT", "DSSS_OFDM",
+              "DELAYED_BLOCK_ACK", "IMMEDIATE_BLOCK_ACK"
+            ]
+          }
+        },
+        "crypto_keys": {
+          "type": "object",
+          "required": [
+            "kck",
+            "kek",
+            "pmk",
+            "tk",
+            "seq"
+          ],
+          "properties": {
+            "kck": {
+              "type": "string"
+            },
+            "kek": {
+              "type": "string"
+            },
+            "pmk": {
+              "type": "string"
+            },
+            "tk": {
+              "type": "string"
+            },
+            "seq": {
+              "type": "string"
+            }
+          }
+        },
+        "ht_capabilities": {
+          "type": "object",
+          "required": [
+          ]
+        },
+        "vht_capabilities": {
+          "type": "object",
+          "required": [
+          ]
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "datapath_id",
+    "ap",
+    "clients"
+  ],
+  "properties" : {
+    "datapath_id": {
+      "type": "string"
+    },
+    "ap" : {
+      "type": "string"
+    },
+    "clients" : {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/client"
+      }
+    }
+  },
+  "example": {
+    "datapath_id": "01:23:45:67:89:ab:cd:ef",
+    "ap": "ap0",
+    "clients": [
+      {
+        "mac": "00:0b:ad:c0:ff:ee",
+        "capabilities": [
+          "ESS", "IBSS", "CF_POLLABLE", "CF_POLL_REQUEST", "PRIVACY",
+          "SHORT_PREAMBLE", "PBCC", "CHANNEL_AGILITY", "SPECTRUM_MANAGEMENT",
+          "QoS", "SHORT_TIME_SLOT", "APSD", "RADIO_MEASUREMENT", "DSSS_OFDM",
+          "DELAYED_BLOCK_ACK", "IMMEDIATE_BLOCK_ACK"
+        ]
+      }
+    ]
+  }
+}
