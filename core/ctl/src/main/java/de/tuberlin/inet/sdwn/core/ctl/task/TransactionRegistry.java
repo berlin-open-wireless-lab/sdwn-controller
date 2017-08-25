@@ -65,14 +65,23 @@ public class TransactionRegistry {
         if (handler == null)
             return false;
 
-        // remove if finished, update timestamp if not
-        if (!handler.task.update(dpid, ev).equals(DONE)) {
-            handler.timestamp = currentTimeMillis();
-        } else {
-            transactions.remove(ev.getXid());
-            if (transactions.isEmpty()) {
-                timeout.cancel();
-            }
+        switch (handler.task.update(dpid, ev)) {
+            case DONE:
+                transactions.remove(ev.getXid());
+                if (transactions.isEmpty()) {
+                    timeout.cancel();
+                }
+                break;
+            case CONTINUE:
+                handler.timestamp = currentTimeMillis();
+                break;
+            case NEXT:
+                transactions.remove(ev.getXid());
+                if (handler.task.hasFollowupTask()) {
+                    registerTransaction(handler.task.followupTask());
+                }
+                break;
+
         }
         return true;
     }

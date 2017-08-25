@@ -29,7 +29,6 @@ public class SdwnManager implements SdwnTransactionManager {
     @Override
     public void startTransaction(SdwnTransactionTask t) {
         t.setManager(this);
-        t.setController(controller);
         transactions.registerTransaction(t);
     }
 

@@ -32,7 +32,8 @@ public class DelClientTask extends DefaultSdwnTransaction {
 
         if (delClientMsg.getAp().getPortNumber() == ap.portNumber() &&
                 client.macAddress().equals(MacAddress.valueOf(delClientMsg.getClient().getBytes()))) {
-            coreService.removeClient(client);
+
+            transactionManager.controller().removeClient(client);
         }
 
         return null;

@@ -13,8 +13,8 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
 
     protected long xid;
     protected SdwnTransactionManager transactionManager;
-    protected SdwnCoreService coreService;
     protected Timeout timeout;
+    protected SdwnTransactionTask followupTask;
 
     protected final Logger log = getLogger(getClass());
 
@@ -28,6 +28,16 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
         this.xid = xid;
     }
 
+    public DefaultSdwnTransaction(long timeout, SdwnTransactionTask task) {
+        this(timeout);
+        followupTask = task;
+    }
+
+    public DefaultSdwnTransaction(long xid, long timeout, SdwnTransactionTask task) {
+        this(xid, timeout);
+        followupTask = task;
+    }
+
     @Override
     public long xid() {
         return xid;
@@ -39,17 +49,28 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
     }
 
     @Override
-    public void setController(SdwnCoreService s) {
-        coreService = s;
-    }
-
-    @Override
     public void setXid(long xid) {
         this.xid = xid;
     }
 
     @Override
     public void timeout() {
+    }
+
+    @Override
+    public boolean hasFollowupTask() {
+        return this.followupTask != null;
+    }
+
+    @Override
+    public SdwnTransactionTask setFollowupTask(SdwnTransactionTask t) {
+        this.followupTask = t;
+        return this;
+    }
+
+    @Override
+    public SdwnTransactionTask followupTask() {
+        return this.followupTask;
     }
 
     private class TransactionTimeout implements TimerTask {
@@ -63,6 +84,7 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
         @Override
         public void run(Timeout timeout) throws Exception {
             transactionManager.cancelTransaction(task);
+            task.timeout();
         }
     }
 }
