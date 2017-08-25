@@ -10,6 +10,9 @@ import org.projectfloodlight.openflow.protocol.OFIeee80211McsInfo;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * IEEE 802.11 HT capabilities abstraction.
+ */
 public class Ieee80211HtCapability {
 
     private final Set<IeeeHtCapabilityInfo> capInfo;

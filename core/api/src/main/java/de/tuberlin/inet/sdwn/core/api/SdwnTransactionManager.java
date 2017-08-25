@@ -37,7 +37,7 @@ public interface SdwnTransactionManager {
      *
      * @param dpid the switch that sent the message
      * @param msg  the message
-     * @return
+     * @return true if the message was handled some where, false otherwise
      */
     boolean msgReceived(Dpid dpid, OFMessage msg);
 }
