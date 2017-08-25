@@ -33,7 +33,6 @@ public class AddClientTask extends DefaultSdwnTransaction {
                 reply.getAp().getPortNumber() ==  ap.portNumber()) {
             client.assoc(ap);
             ap.addClient(client);
-
         }
 
         return DONE;

@@ -12,9 +12,9 @@ import org.projectfloodlight.openflow.protocol.OFSdwnEntityAccesspoint;
 import org.projectfloodlight.openflow.protocol.OFSdwnEntityBand;
 import org.projectfloodlight.openflow.protocol.OFSdwnEntityNic;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Nic implements SdwnNic {
 
@@ -53,21 +53,28 @@ public class Nic implements SdwnNic {
                 .filter(OFSdwnEntityBand.class::isInstance)
                 .map(OFSdwnEntityBand.class::cast)
                 .filter(b -> b.getIndex() == ofNic.getIndex())
-                .forEach(b ->  {
+                .forEach(b -> {
                     try {
                         bands.add(FrequencyBand.fromOF(ofNic.getIndex(), b, entities));
                     } catch (SdwnEntityParsingException e) {
-                        // do not add band
+                        // do nothing
                     }
                 });
 
         nic.bands = bands;
-        nic.aps = entities.stream()
+        nic.aps = new ArrayList<>();
+
+        entities.stream()
                 .filter(OFSdwnEntityAccesspoint.class::isInstance)
                 .map(OFSdwnEntityAccesspoint.class::cast)
                 .filter(ap -> ap.getPhyMac().equals(ofNic.getMacAddr()))
-                .map(ap -> AccessPoint.fromOF(nic, ap))
-                .collect(Collectors.toList());
+                .forEach(apEntity -> {
+                    try {
+                        nic.aps.add(AccessPoint.fromOF(nic, apEntity));
+                    } catch (SdwnEntityParsingException e) {
+                        // do nothing
+                    }
+                });
         return nic;
     }
 
