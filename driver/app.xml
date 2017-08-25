@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<app name="de.tuberlin.inet.sdwn-driver" origin="TU Berlin INET" version="${project.version}"
+     category="Driver" url="https://inet.tu-berlin.de" title="SDWN Wireless Switch Driver"
+     featuresRepo="mvn:${project.groupId}/${project.artifactId}/${project.version}/xml/features"
+     features="${project.artifactId}" apps="org.onosproject.openflow-base,org.onosproject.drivers">
+    <description>${project.description}</description>
+
+    <artifact>mvn:${project.groupId}/${project.artifactId}/${project.version}</artifact>
+</app>
