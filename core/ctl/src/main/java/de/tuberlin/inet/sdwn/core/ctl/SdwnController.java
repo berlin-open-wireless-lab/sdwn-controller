@@ -22,7 +22,6 @@ import de.tuberlin.inet.sdwn.core.api.Ieee80211Capability;
 import de.tuberlin.inet.sdwn.core.api.SdwnClientListener;
 import de.tuberlin.inet.sdwn.core.api.SdwnSwitchListener;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnEntityParsingException;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequency;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequencyBand;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
@@ -96,7 +95,6 @@ import org.projectfloodlight.openflow.types.McsRxMask;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashSet;
@@ -154,12 +152,11 @@ public class SdwnController implements SdwnCoreService {
     private XidGenerator xidGen = XidGenerators.create();
     protected SdwnTransactionManager sdwnManager = new SdwnManager(this, transactionTimeout);
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
-    protected Set<SdwnSwitchListener> sdwnSwitchListeners = new ConcurrentSet<>();
-    protected Set<SdwnClientListener> staListeners = new ConcurrentSet<>();
+    protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
+    protected Set<SdwnClientListener> clientListeners = new ConcurrentSet<>();
     protected Set<Sdwn80211MgmtFrameListener> mgmtFrameListeners = new ConcurrentSet<>();
     protected SdwnEntityStore store = new SdwnEntityStore();
 
-    //    protected OpenWifiRestClient openWifiRestClient;
     protected SdwnClientAuthenticatorService clientAuthenticator;
 
     @Activate
@@ -200,6 +197,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     /* Client Authentication */
+    // TODO
     @Override
     public boolean registerClientAuthenticator(SdwnClientAuthenticatorService authenticator) {
         if (clientAuthenticator != null) {
@@ -236,29 +234,29 @@ public class SdwnController implements SdwnCoreService {
 
     @Override
     public void registerSwitchListener(SdwnSwitchListener listener) throws IllegalArgumentException {
-        if (sdwnSwitchListeners.contains(listener)) {
+        if (switchListeners.contains(listener)) {
             throw new IllegalArgumentException("Listener already registered");
         }
-        sdwnSwitchListeners.add(listener);
+        switchListeners.add(listener);
     }
 
     @Override
     public void unregisterSwitchListener(SdwnSwitchListener listener) {
-        sdwnSwitchListeners.remove(listener);
+        switchListeners.remove(listener);
     }
 
     @Override
     public void registerClientListener(SdwnClientListener listener) throws IllegalArgumentException {
-        if (staListeners.contains(listener)) {
+        if (clientListeners.contains(listener)) {
             throw new IllegalArgumentException("Listener already registered");
         }
 
-        staListeners.add(listener);
+        clientListeners.add(listener);
     }
 
     @Override
     public void unregisterClientListener(SdwnClientListener listener) {
-        staListeners.remove(listener);
+        clientListeners.remove(listener);
     }
 
     @Override
@@ -483,6 +481,9 @@ public class SdwnController implements SdwnCoreService {
 
             log.info("Sending {}", getClientsMsgs);
             sw.sendMsg(getClientsMsgs);
+
+            // notify switch listeners
+            switchListeners.forEach(listener -> listener.switchConnected(dpid));
         }
 
         private OFSdwnGetClientsRequest buildGetClientsMessage(OpenFlowWirelessSwitch sw, SdwnAccessPoint ap) {
@@ -496,6 +497,7 @@ public class SdwnController implements SdwnCoreService {
         public void switchRemoved(Dpid dpid) {
             log.info("Wireless Switch disconnected: {}", dpid);
             store.removeSwitch(dpid);
+            switchListeners.forEach(l -> l.switchDisconnected(dpid));
         }
 
         @Override
@@ -846,7 +848,7 @@ public class SdwnController implements SdwnCoreService {
             log.info("New Client at AP {} on {}: {}", ap.name(), dpid, client);
 
             store.addClient(client, ap);
-
+            clientListeners.forEach(l -> l.clientAssociated(client));
             // FIXME! hostapd on the agent does not have HT/VHT capabilities at this time
             //       send get client request to fetch capabilities/(V)HT capabilities. Needs new SdwnTransactionTask
             publishHostForClient(client);
@@ -866,6 +868,7 @@ public class SdwnController implements SdwnCoreService {
 
             log.info("Client {} disconnected from AP {} on {}", client.macAddress(), client.ap(), dpid);
 
+            clientListeners.forEach(l -> l.clientDisassociated(client));
             store.removeClient(client.macAddress());
             hostProviderService.hostVanished(hostId(client.macAddress()));
             sdwnManager.msgReceived(dpid, msg);

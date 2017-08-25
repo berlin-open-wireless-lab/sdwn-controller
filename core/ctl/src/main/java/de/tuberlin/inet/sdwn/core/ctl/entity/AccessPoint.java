@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
+import de.tuberlin.inet.sdwn.core.api.entity.SdwnEntityParsingException;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequency;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequencyBand;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
@@ -41,12 +42,13 @@ public class AccessPoint implements SdwnAccessPoint {
         clients.addAll(stas);
     }
 
-    public static AccessPoint fromOF(SdwnNic nic, OFSdwnEntityAccesspoint entity) {
+    public static AccessPoint fromOF(SdwnNic nic, OFSdwnEntityAccesspoint entity) throws SdwnEntityParsingException {
         StringBuilder sb = new StringBuilder();
         for (byte b : entity.getSsid()) {
             sb.append((char) b);
         }
 
+        // look up currently used frequency from frequency band of NIC running the AP
         SdwnFrequency freq = null;
 
         for (SdwnFrequencyBand band : nic.bands()) {
@@ -59,7 +61,7 @@ public class AccessPoint implements SdwnAccessPoint {
         }
 
         if (freq == null) {
-            return null;
+            throw new SdwnEntityParsingException(String.format("Failed to find frequency in NIC's frequency band: %d Hz", entity.getCurrFreq()), nic);
         }
 
         return new AccessPoint(entity.getIfNo().getPortNumber(),

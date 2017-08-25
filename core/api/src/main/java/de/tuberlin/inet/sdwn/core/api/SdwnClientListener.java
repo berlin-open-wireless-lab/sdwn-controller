@@ -1,15 +1,14 @@
 package de.tuberlin.inet.sdwn.core.api;
 
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
-import org.onlab.packet.MacAddress;
+import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 
+/**
+ * Callbacks for events related to client association.
+ *
+ */
 public interface SdwnClientListener {
 
-    void staAuthenticated(MacAddress staMac, SdwnAccessPoint atAP);
+    void clientAssociated(SdwnClient c);
 
-    void staDeauthenticated(MacAddress staMac, SdwnAccessPoint fromAp);
-
-    void staAssociated(MacAddress staMac, SdwnAccessPoint atAP);
-
-    void staDisassociated(MacAddress staMac, SdwnAccessPoint fromAP);
+    void clientDisassociated(SdwnClient c);
 }
