@@ -1,5 +1,8 @@
 package de.tuberlin.inet.sdwn.core.api;
 
+/**
+ * Utility methods to resolve IEEE 802.11 channel numbers to frequencies and vice-versa.
+ */
 public class Ieee80211Channels {
 
     public enum FrequencyBand {
@@ -12,6 +15,9 @@ public class Ieee80211Channels {
         // prohibit instantiation
     }
 
+    /**
+     * Return the frequency in Hz for the given channel in the given frequency band.
+     */
     public static int channelToFrequency(int channel, FrequencyBand band) {
 
         if (channel <= 0) {
@@ -41,6 +47,9 @@ public class Ieee80211Channels {
         return 0;
     }
 
+    /**
+     * Return the channel for the given frequency in Hz.
+     */
     public static int frequencyToChannel(long freq) {
         if (freq == 2484) {
             return 14;

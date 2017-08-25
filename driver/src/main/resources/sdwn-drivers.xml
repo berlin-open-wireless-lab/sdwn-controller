@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<drivers>
+    <driver name="sdwn" extends="default" manufacturer="INET"
+            hwVersion="LEDE" swVersion="wlanflow">
+        <behaviour api="org.onosproject.openflow.controller.driver.OpenFlowSwitchDriver"
+                   impl="de.tuberlin.inet.sdwn.driver.handshaker.OpenFlowWirelessSwitch13"/>
+    </driver>
+</drivers>
