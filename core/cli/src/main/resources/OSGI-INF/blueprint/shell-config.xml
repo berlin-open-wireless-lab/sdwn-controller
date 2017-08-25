@@ -17,13 +17,6 @@
 
     <command-bundle xmlns="http://karaf.apache.org/xmlns/shell/v1.1.0">
         <command>
-            <action class="de.tuberlin.inet.sdwn.cli.HandoverCommand"/>
-            <completers>
-                <ref component-id="ClientCompleter"/>
-                <ref component-id="SwitchDpidCompleter"/>
-            </completers>
-        </command>
-        <command>
             <action class="de.tuberlin.inet.sdwn.cli.ClientRemoveCommand"/>
             <completers>
                 <ref component-id="ClientCompleter"/>
@@ -44,9 +37,6 @@
             <completers>
                 <ref component-id="SwitchDpidCompleter"/>
             </completers>
-        </command>
-        <command>
-            <action class="de.tuberlin.inet.sdwn.cli.MacEventCount"/>
         </command>
         <command>
             <action class="de.tuberlin.inet.sdwn.cli.SwitchesCommand"/>

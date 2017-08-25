@@ -1,5 +1,8 @@
 package de.tuberlin.inet.sdwn.core.api.entity;
 
+/**
+ * Client cryptographic keys abstraction.
+ */
 public interface SdwnClientCryptoKeys extends SdwnEntity {
 
     byte[] pmk();
