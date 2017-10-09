@@ -49,7 +49,7 @@ public class SwitchesCommand extends AbstractShellCommand {
             sb.append("\t- Related OpenFlow switch: ").append(sw.relatedOfSwitch().toString()).append("\n");
         }
         sb.append("\t- Network Interface Cards:\n");
-        sw.nics().forEach(nic -> {
+        sw.nicEntities().forEach(nic -> {
             sb.append("\t\t* ").append(nic.getMacAddr().toString()).append("\n");
             sb.append("\t\t- Access Points:\n");
             service.apsForSwitch(dpid).stream()
