@@ -37,7 +37,7 @@
         <onos.app.origin>TU Berlin INET</onos.app.origin>
         <onos.app.category>Wireless</onos.app.category>
         <onos.app.requires>
-            de.tuberlin.inet.sdwn-driver,
+            de.tuberlin.inet.sdwn.sdwn-driver,
             org.onosproject.openflow
         </onos.app.requires>
         <onos.app.url>http://inet.tu-berlin.de</onos.app.url>
