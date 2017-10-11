@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>sdwn-services</artifactId>
+        <groupId>de.tuberlin.inet.sdwn</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>bundle</packaging>
+
+    <artifactId>sdwn-service-mobilitymanager</artifactId>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <onos.version>1.10.0-SNAPSHOT</onos.version>
+        <onos.app.name>de.tuberlin.inet.sdwn.mobility</onos.app.name>
+        <onos.app.title>802.11 Client Mobility Manager</onos.app.title>
+        <onos.app.origin>TU Berlin INET</onos.app.origin>
+        <onos.app.category>Wireless</onos.app.category>
+        <onos.app.url>https://inet.tu-berlin.de</onos.app.url>
+        <onos.app.readme>SDWN service handling client mobility.</onos.app.readme>
+        <onos.app.requires>
+            de.tuberlin.inet.sdwn.sdwn-controller
+        </onos.app.requires>
+
+        <!-- REST API params -->
+        <!--<web.context>/sdwn/hearingmap</web.context>-->
+        <!--<api.description>SDWN Hearing Map REST API</api.description>-->
+        <!--<api.version>1.0.0</api.version>-->
+        <!--<api.package>de.tuberlin.inet.sdwn.hearingmap.rest</api.package>-->
+        <!--<api.title>SDWN Hearing Map REST API</api.title>-->
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>de.tuberlin.inet.sdwn</groupId>
+            <artifactId>sdwn-core-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.compendium</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>3.0.1</version>
+                <extensions>true</extensions>
+                <!--<configuration>-->
+                    <!--<instructions>-->
+                        <!--<_wab>src/main/webapp/</_wab>-->
+                        <!--<Include-Resource>-->
+                            <!--WEB-INF/classes/apidoc/swagger.json=target/swagger.json,-->
+                            <!--{maven-resources}-->
+                        <!--</Include-Resource>-->
+                        <!--<Bundle-SymbolicName>-->
+                            <!--${project.groupId}.${project.artifactId}-->
+                        <!--</Bundle-SymbolicName>-->
+                        <!--<Import-Package>*,org.glassfish.jersey.servlet-->
+                        <!--</Import-Package>-->
+                        <!--<Web-ContextPath>${web.context}</Web-ContextPath>-->
+                    <!--</instructions>-->
+                <!--</configuration>-->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.5.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-scr-plugin</artifactId>
+                <version>1.21.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-scr-srcdescriptor</id>
+                        <goals>
+                            <goal>scr</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <supportedProjectTypes>
+                        <supportedProjectType>bundle</supportedProjectType>
+                        <supportedProjectType>war</supportedProjectType>
+                    </supportedProjectTypes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.onosproject</groupId>
+                <artifactId>onos-maven-plugin</artifactId>
+                <version>1.10</version>
+                <executions>
+                    <execution>
+                        <id>cfg</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>cfg</goal>
+                        </goals>
+                    </execution>
+                    <!--<execution>-->
+                        <!--<id>swagger</id>-->
+                        <!--<phase>generate-sources</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>swagger</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                    <execution>
+                        <id>app</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>app</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

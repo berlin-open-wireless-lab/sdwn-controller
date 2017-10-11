@@ -9,31 +9,31 @@ import java.util.concurrent.TimeUnit;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
+public abstract class DefaultSdwnTransactionContext implements SdwnTransactionContext {
 
     protected long xid;
     protected SdwnTransactionManager transactionManager;
     protected Timeout timeout;
-    protected SdwnTransactionTask followupTask;
+    protected SdwnTransactionContext followupTask;
 
     protected final Logger log = getLogger(getClass());
 
-    public DefaultSdwnTransaction(long timeout) {
+    public DefaultSdwnTransactionContext(long timeout) {
         xid = NO_XID;
         this.timeout = Timer.getTimer().newTimeout(new TransactionTimeout(this), timeout, TimeUnit.MILLISECONDS);
     }
 
-    public DefaultSdwnTransaction(long xid, long timeout) {
+    public DefaultSdwnTransactionContext(long xid, long timeout) {
         this(timeout);
         this.xid = xid;
     }
 
-    public DefaultSdwnTransaction(long timeout, SdwnTransactionTask task) {
+    public DefaultSdwnTransactionContext(long timeout, SdwnTransactionContext task) {
         this(timeout);
         followupTask = task;
     }
 
-    public DefaultSdwnTransaction(long xid, long timeout, SdwnTransactionTask task) {
+    public DefaultSdwnTransactionContext(long xid, long timeout, SdwnTransactionContext task) {
         this(xid, timeout);
         followupTask = task;
     }
@@ -63,21 +63,21 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
     }
 
     @Override
-    public SdwnTransactionTask setFollowupTask(SdwnTransactionTask t) {
+    public SdwnTransactionContext setFollowupTask(SdwnTransactionContext t) {
         this.followupTask = t;
         return this;
     }
 
     @Override
-    public SdwnTransactionTask followupTask() {
+    public SdwnTransactionContext followupTask() {
         return this.followupTask;
     }
 
     private class TransactionTimeout implements TimerTask {
 
-        private SdwnTransactionTask task;
+        private SdwnTransactionContext task;
 
-        TransactionTimeout(SdwnTransactionTask t) {
+        TransactionTimeout(SdwnTransactionContext t) {
             task = t;
         }
 

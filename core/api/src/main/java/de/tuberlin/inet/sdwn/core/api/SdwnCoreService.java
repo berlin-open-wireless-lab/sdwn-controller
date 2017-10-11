@@ -93,8 +93,8 @@ public interface SdwnCoreService {
      */
     SdwnClient getClient(MacAddress mac);
 
-    boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp);
-    boolean handOver(SdwnClient client, SdwnAccessPoint toAp);
+//    boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp);
+//    boolean handOver(SdwnClient client, SdwnAccessPoint toAp);
 
     /**
      * Make an AP change its operating channel. The AP will send a Channel Switch
@@ -110,7 +110,7 @@ public interface SdwnCoreService {
 
     boolean registerClientAuthenticator(SdwnClientAuthenticatorService authenticator);
 
-    void unregisterClientAuthenticator(SdwnClientAuthenticatorService authenticator);
+    void removeClientAuthenticator(SdwnClientAuthenticatorService authenticator);
 
     /**
      * Register an {@code SdwnSwitchListener} to hook into the controller's switch lifecycle
@@ -124,7 +124,7 @@ public interface SdwnCoreService {
     /**
      * Un-register the given {@code SdwnSwitchListener}.
      */
-    void unregisterSwitchListener(SdwnSwitchListener listener);
+    void removeSwitchListener(SdwnSwitchListener listener);
 
     /**
      * Register an {@code SdwnClientListener} to hook into the controller's client
@@ -138,7 +138,7 @@ public interface SdwnCoreService {
     /**
      * Un-register the given {@code SdwnClientListener}.
      */
-    void unregisterClientListener(SdwnClientListener listener);
+    void removeClientListener(SdwnClientListener listener);
 
     /**
      * Register an {@code Sdwn80211MgmtFrameListener} to receive notifications
@@ -147,42 +147,51 @@ public interface SdwnCoreService {
      * @param listener the listener
      * @throws IllegalArgumentException
      */
-    void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener) throws IllegalArgumentException;
+    void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException;
 
     /**
      * Un-register the given {@code Sdwn80211MgmtFrameListener}.
      */
-    void unregister80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener);
+    void remove80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener);
+
 
     /**
-     * React to a Probe Request.
+     * Start the given transaction.
      *
-     * @param clientMac the client that sent the request
-     * @param ap the AP that received the request
-     * @param xid the XID of the incoming notification
-     * @param deny flag instructing the AP to deny the request
+     * @param t the transaction
+     * @return the XID
      */
-    void sendProbeResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
+    long startTransaction(SdwnTransactionContext t);
 
-    /**
-     * React to an Authentication Request.
-     *
-     * @param clientMac the client that sent the request
-     * @param ap the AP that received the request
-     * @param xid the XID of the incoming notification
-     * @param deny flag instructing the AP to deny the request
-     */
-    void sendAuthResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
-
-    /**
-     * React to an Association Request.
-     *
-     * @param clientMac the client that sent the request
-     * @param ap the AP that received the request
-     * @param xid the XID of the incoming notification
-     * @param deny flag instructing the AP to deny the request
-     */
-    void sendAssocResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
+//    /**
+//     * React to a Probe Request.
+//     *
+//     * @param clientMac the client that sent the request
+//     * @param ap the AP that received the request
+//     * @param xid the XID of the incoming notification
+//     * @param deny flag instructing the AP to deny the request
+//     */
+//    void sendProbeResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
+//
+//    /**
+//     * React to an Authentication Request.
+//     *
+//     * @param clientMac the client that sent the request
+//     * @param ap the AP that received the request
+//     * @param xid the XID of the incoming notification
+//     * @param deny flag instructing the AP to deny the request
+//     */
+//    void sendAuthResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
+//
+//    /**
+//     * React to an Association Request.
+//     *
+//     * @param clientMac the client that sent the request
+//     * @param ap the AP that received the request
+//     * @param xid the XID of the incoming notification
+//     * @param deny flag instructing the AP to deny the request
+//     */
+//    void sendAssocResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
 
     SdwnClient createClientFromJson(ObjectNode node);
 

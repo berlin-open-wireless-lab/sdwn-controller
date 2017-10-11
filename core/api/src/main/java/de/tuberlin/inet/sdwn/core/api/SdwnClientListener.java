@@ -1,5 +1,6 @@
 package de.tuberlin.inet.sdwn.core.api;
 
+import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 
 /**
@@ -10,5 +11,5 @@ public interface SdwnClientListener {
 
     void clientAssociated(SdwnClient c);
 
-    void clientDisassociated(SdwnClient c);
+    void clientDisassociated(SdwnClient c, SdwnAccessPoint fromAp);
 }

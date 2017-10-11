@@ -34,5 +34,6 @@
     <modules>
         <module>hearingmap</module>
         <module>openwifi</module>
+        <module>mobilitymanager</module>
     </modules>
 </project>

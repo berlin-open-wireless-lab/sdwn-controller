@@ -93,15 +93,15 @@ public class HearingMapImpl implements SdwnHearingMap {
 
     @Activate
     public void activate() {
-        sdwnService.register80211MgtmFrameListener(frameListener);
+        sdwnService.register80211MgtmFrameListener(frameListener, 0);
         sdwnService.registerSwitchListener(switchListener);
         log.info("Started");
     }
 
     @Deactivate
     public void deactivate() {
-        sdwnService.unregisterSwitchListener(switchListener);
-        sdwnService.unregister80211MgmtFrameListener(frameListener);
+        sdwnService.removeSwitchListener(switchListener);
+        sdwnService.remove80211MgmtFrameListener(frameListener);
         log.info("Stopped");
     }
 
@@ -144,7 +144,7 @@ public class HearingMapImpl implements SdwnHearingMap {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
-        toRemove.stream().forEach(map::remove);
+        toRemove.forEach(map::remove);
     }
 
     @Override
@@ -167,18 +167,21 @@ public class HearingMapImpl implements SdwnHearingMap {
 
     private final class InternalFrameListener implements Sdwn80211MgmtFrameListener {
         @Override
-        public void receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             clientHeard(atAP.nic().switchID(), atAP, clientMac, rssi, freq);
+            return ResponseAction.NONE;
         }
 
         @Override
-        public void receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             clientHeard(atAP.nic().switchID(), atAP, clientMac, rssi, freq);
+            return ResponseAction.NONE;
         }
 
         @Override
-        public void receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             clientHeard(atAP.nic().switchID(), atAP, clientMac, rssi, freq);
+            return ResponseAction.NONE;
         }
     }
 

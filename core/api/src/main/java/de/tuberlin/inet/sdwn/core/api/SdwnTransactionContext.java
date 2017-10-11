@@ -9,7 +9,7 @@ import org.projectfloodlight.openflow.protocol.OFMessage;
  * The transaction is identified by its OpenFlow transaction ID (XID) and may
  * specify a timeout.
  */
-public interface SdwnTransactionTask {
+public interface SdwnTransactionContext {
 
     /**
      * Callback status code returned by the {@code update} method after a message has
@@ -71,12 +71,12 @@ public interface SdwnTransactionTask {
     /**
      * Set the followup task.
      */
-    SdwnTransactionTask setFollowupTask(SdwnTransactionTask t);
+    SdwnTransactionContext setFollowupTask(SdwnTransactionContext t);
 
     /**
      * Return the followup task.
      */
-    SdwnTransactionTask followupTask();
+    SdwnTransactionContext followupTask();
 
     /**
      * Callback invoked by the {@code SdwnTransactionManager} after a transaction has timed out.

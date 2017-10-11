@@ -1,6 +1,6 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
-import de.tuberlin.inet.sdwn.core.api.SdwnTransactionTask;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import org.onlab.util.Timer;
@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionTask.TransactionStatus.DONE;
 import static java.lang.System.currentTimeMillis;
 
 public class TransactionRegistry {
@@ -24,7 +23,7 @@ public class TransactionRegistry {
     private Timeout timeout;
 
     private final Map<Long, TransactionHandler> transactions = new HashMap<>();
-    private final Set<SdwnTransactionTask> allMsgHandlers = new HashSet<>();
+    private final Set<SdwnTransactionContext> allMsgHandlers = new HashSet<>();
 
     public TransactionRegistry(long timeout) {
         TIMEOUT = timeout;
@@ -34,12 +33,12 @@ public class TransactionRegistry {
         return transactions.containsKey(xid);
     }
 
-    public void registerTransaction(SdwnTransactionTask t) {
-        if (t.xid() == SdwnTransactionTask.NO_XID) {
+    public void registerTransaction(SdwnTransactionContext t) {
+        if (t.xid() == SdwnTransactionContext.NO_XID) {
             return;
         }
 
-        if (t.xid() == SdwnTransactionTask.ANY_XID) {
+        if (t.xid() == SdwnTransactionContext.ANY_XID) {
             allMsgHandlers.add(t);
             return;
         }
@@ -51,7 +50,7 @@ public class TransactionRegistry {
         }
     }
 
-    public void unregisterTransaction(SdwnTransactionTask t) {
+    public void unregisterTransaction(SdwnTransactionContext t) {
         transactions.remove(t.xid());
         if (transactions.isEmpty()) {
             timeout.cancel();
@@ -88,9 +87,9 @@ public class TransactionRegistry {
 
     private class TransactionHandler {
         long timestamp;
-        SdwnTransactionTask task;
+        SdwnTransactionContext task;
 
-        TransactionHandler(SdwnTransactionTask t) {
+        TransactionHandler(SdwnTransactionContext t) {
             timestamp = currentTimeMillis();
             task = t;
         }
