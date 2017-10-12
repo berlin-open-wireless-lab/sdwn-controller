@@ -1,10 +1,10 @@
-package de.tuberlin.inet.sdwn.service.mobilitymanager.impl;
+package de.tuberlin.inet.sdwn.mobilitymanager.impl;
 
 import com.google.common.base.Strings;
 import de.tuberlin.inet.sdwn.core.api.*;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
-import de.tuberlin.inet.sdwn.service.mobilitymanager.api.SdwnMobilityManager;
+import de.tuberlin.inet.sdwn.mobilitymanager.api.SdwnMobilityManager;
 import org.apache.felix.scr.annotations.*;
 import org.onlab.packet.MacAddress;
 import org.onlab.util.Tools;
