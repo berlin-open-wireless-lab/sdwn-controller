@@ -22,7 +22,8 @@
         <onos.app.url>https://inet.tu-berlin.de</onos.app.url>
         <onos.app.readme>SDWN service handling client mobility.</onos.app.readme>
         <onos.app.requires>
-            de.tuberlin.inet.sdwn.sdwn-controller
+            de.tuberlin.inet.sdwn.sdwn-controller,
+            de.tuberlin.inet.sdwn.hearingmap
         </onos.app.requires>
 
         <!-- REST API params -->
@@ -37,6 +38,12 @@
         <dependency>
             <groupId>de.tuberlin.inet.sdwn</groupId>
             <artifactId>sdwn-core-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.tuberlin.inet.sdwn</groupId>
+            <artifactId>sdwn-service-hearingmap</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
