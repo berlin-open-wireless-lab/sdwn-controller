@@ -19,7 +19,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import de.tuberlin.inet.sdwn.core.api.Sdwn80211MgmtFrameListener;
 import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
-import de.tuberlin.inet.sdwn.hearingmap.api.SdwnHearingMap;
+import de.tuberlin.inet.sdwn.hearingmap.SdwnHearingMap;
 import de.tuberlin.inet.sdwn.core.api.SdwnSwitchListenerAdapter;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import io.netty.util.Timeout;

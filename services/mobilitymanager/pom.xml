@@ -16,7 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <onos.version>1.10.0-SNAPSHOT</onos.version>
         <onos.app.name>de.tuberlin.inet.sdwn.mobility</onos.app.name>
-        <onos.app.title>802.11 Client Mobility Manager</onos.app.title>
+        <onos.app.title>SDWN Client Mobility Manager</onos.app.title>
         <onos.app.origin>TU Berlin INET</onos.app.origin>
         <onos.app.category>Wireless</onos.app.category>
         <onos.app.url>https://inet.tu-berlin.de</onos.app.url>
@@ -27,11 +27,11 @@
         </onos.app.requires>
 
         <!-- REST API params -->
-        <web.context>/sdwn/mobility</web.context>
-        <api.description>SDWN Mobility Manager REST API</api.description>
-        <api.version>1.0.0</api.version>
-        <api.package>de.tuberlin.inet.sdwn.mobilitymanager.rest</api.package>
-        <api.title>SDWN Mobility Manager REST API</api.title>
+        <!--<web.context>/sdwn/mobility</web.context>-->
+        <!--<api.description>SDWN Mobility Manager REST API</api.description>-->
+        <!--<api.version>1.0.0</api.version>-->
+        <!--<api.package>de.tuberlin.inet.sdwn.mobilitymanager.rest</api.package>-->
+        <!--<api.title>SDWN Mobility Manager REST API</api.title>-->
     </properties>
 
     <dependencies>
@@ -61,21 +61,21 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <version>3.0.1</version>
                 <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <_wab>src/main/webapp/</_wab>
-                        <Include-Resource>
-                            WEB-INF/classes/apidoc/swagger.json=target/swagger.json,
-                            {maven-resources}
-                        </Include-Resource>
-                        <Bundle-SymbolicName>
-                            ${project.groupId}.${project.artifactId}
-                        </Bundle-SymbolicName>
-                        <Import-Package>*,org.glassfish.jersey.servlet
-                        </Import-Package>
-                        <Web-ContextPath>${web.context}</Web-ContextPath>
-                    </instructions>
-                </configuration>
+                <!--<configuration>-->
+                    <!--<instructions>-->
+                        <!--<_wab>src/main/webapp/</_wab>-->
+                        <!--<Include-Resource>-->
+                            <!--WEB-INF/classes/apidoc/swagger.json=target/swagger.json,-->
+                            <!--{maven-resources}-->
+                        <!--</Include-Resource>-->
+                        <!--<Bundle-SymbolicName>-->
+                            <!--${project.groupId}.${project.artifactId}-->
+                        <!--</Bundle-SymbolicName>-->
+                        <!--<Import-Package>*,org.glassfish.jersey.servlet-->
+                        <!--</Import-Package>-->
+                        <!--<Web-ContextPath>${web.context}</Web-ContextPath>-->
+                    <!--</instructions>-->
+                <!--</configuration>-->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

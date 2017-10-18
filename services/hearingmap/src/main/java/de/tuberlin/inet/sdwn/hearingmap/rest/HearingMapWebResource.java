@@ -1,6 +1,6 @@
 package de.tuberlin.inet.sdwn.hearingmap.rest;
 
-import de.tuberlin.inet.sdwn.hearingmap.api.SdwnHearingMap;
+import de.tuberlin.inet.sdwn.hearingmap.SdwnHearingMap;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
 import org.onosproject.rest.AbstractWebResource;

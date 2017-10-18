@@ -3,7 +3,7 @@ package de.tuberlin.inet.sdwn.mobilitymanager.cli;
 import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
-import de.tuberlin.inet.sdwn.mobilitymanager.api.SdwnMobilityManager;
+import de.tuberlin.inet.sdwn.mobilitymanager.SdwnMobilityManager;
 import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
 import org.onlab.packet.MacAddress;

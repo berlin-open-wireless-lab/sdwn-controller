@@ -1,4 +1,4 @@
-package de.tuberlin.inet.sdwn.mobilitymanager.api;
+package de.tuberlin.inet.sdwn.mobilitymanager;
 
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
