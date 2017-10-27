@@ -42,50 +42,58 @@ public class TransactionRegistry {
             return;
         }
 
-        if (t.xid() == SdwnTransactionTask.ANY_XID) {
-            allMsgHandlers.add(t);
-            return;
-        }
+        synchronized (transactions) {
 
-        transactions.put(t.xid(), new TransactionHandler(t));
+            if (t.xid() == SdwnTransactionTask.ANY_XID) {
+                allMsgHandlers.add(t);
+                return;
+            }
 
-        if (transactions.size() == 1) {
-            timeout = Timer.getTimer().newTimeout(new PeriodicCleanup(), TIMEOUT, TimeUnit.SECONDS);
+            transactions.put(t.xid(), new TransactionHandler(t));
+
+            if (transactions.size() == 1) {
+                timeout = Timer.getTimer().newTimeout(new PeriodicCleanup(), TIMEOUT, TimeUnit.SECONDS);
+            }
         }
     }
 
     public void removeTransaction(SdwnTransactionTask t) {
-        log.info("Transactions before remove: {}", transactions);
-        transactions.remove(t.xid());
-        if (transactions.isEmpty()) {
-            timeout.cancel();
+        synchronized (transactions) {
+            log.info("Transactions before remove: {}", transactions);
+            transactions.remove(t.xid());
+            if (transactions.isEmpty()) {
+                timeout.cancel();
+            }
+            log.info("Transactions after remove: {}", transactions);
         }
-        log.info("Transactions after remove: {}", transactions);
     }
 
-    public synchronized boolean runEventHandlers(Dpid dpid, OFMessage ev) {
-        allMsgHandlers.forEach(t -> t.update(dpid, ev));
+    public boolean runEventHandlers(Dpid dpid, OFMessage ev) {
+        synchronized (transactions) {
 
-        TransactionHandler handler = transactions.get(ev.getXid());
-        if (handler == null)
-            return false;
+            allMsgHandlers.forEach(t -> t.update(dpid, ev));
 
-        switch (handler.task.update(dpid, ev)) {
-            case DONE:
-                removeTransaction(handler.task);
-                break;
-            case CONTINUE:
-                handler.timestamp = currentTimeMillis();
-                break;
-            case NEXT:
-                transactions.remove(ev.getXid());
-                if (handler.task.hasFollowupTask()) {
-                    registerTransaction(handler.task.followupTask());
-                }
-                break;
+            TransactionHandler handler = transactions.get(ev.getXid());
+            if (handler == null)
+                return false;
 
+            switch (handler.task.update(dpid, ev)) {
+                case DONE:
+                    removeTransaction(handler.task);
+                    break;
+                case CONTINUE:
+                    handler.timestamp = currentTimeMillis();
+                    break;
+                case NEXT:
+                    transactions.remove(ev.getXid());
+                    if (handler.task.hasFollowupTask()) {
+                        registerTransaction(handler.task.followupTask());
+                    }
+                    break;
+
+            }
+            return true;
         }
-        return true;
     }
 
     private class TransactionHandler {
