@@ -7,9 +7,7 @@ import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnAddClient;
 import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
-import org.projectfloodlight.openflow.protocol.ver13.OFFactoryVer13;
 import org.projectfloodlight.openflow.types.MacAddress;
-import org.projectfloodlight.openflow.types.OFPort;
 
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.CONTINUE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.DONE;
@@ -48,14 +46,6 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void start() {
-//        OFSdwnDelClient msg = OFFactoryVer13.INSTANCE.buildSdwnDelClient()
-//                .setAp(OFPort.of(client.ap().portNumber()))
-//                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(client.macAddress().toBytes()))
-//                .setXid(xid)
-//                .setBanTime(10000)
-//                .build();
-//
-//        transactionManager.controller().sendMsg(client.ap().nic().switchID(), msg);
         transactionManager.controller().removeClientFromAp(client.macAddress(), 10000);
     }
 
