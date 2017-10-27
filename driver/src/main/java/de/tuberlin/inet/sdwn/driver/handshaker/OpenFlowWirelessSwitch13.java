@@ -118,8 +118,6 @@ public class OpenFlowWirelessSwitch13 extends AbstractOpenFlowWirelessSwitch
                 reply = (OFSdwnPortDescReply) stats;
                 sdwnEntities.addAll(reply.getEntities());
 
-                log.info("Got entities: {}", reply.getEntities());
-
                 if (!reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE)) {
                     handshakeComplete.set(true);
                 }

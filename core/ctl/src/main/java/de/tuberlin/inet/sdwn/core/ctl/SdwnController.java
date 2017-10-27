@@ -467,6 +467,8 @@ public class SdwnController implements SdwnCoreService {
                     .map(nicEntity -> Nic.fromOF(dpid, nicEntity, sw.sdwnEntities()))
                     .collect(Collectors.toList());
 
+            log.info("NICS: {}", sw.nicEntities());
+
             store.putNics(nics);
 
             List<OFMessage> getClientsMsgs = new LinkedList<>();
