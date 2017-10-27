@@ -15,8 +15,8 @@ public class DelClientTask extends DefaultSdwnTransaction {
     private final SdwnClient client;
     private final SdwnAccessPoint ap;
 
-    public DelClientTask(long xid, long timeout, SdwnClient client, SdwnAccessPoint ap) {
-        super(xid, timeout);
+    public DelClientTask(long xid, SdwnClient client, SdwnAccessPoint ap) {
+        super(xid);
         this.client = client;
         this.ap = ap;
     }

@@ -15,15 +15,15 @@ public class GetClientsQuery extends DefaultSdwnTransaction {
     private final Dpid dpid;
     private final String ap;
 
-    public GetClientsQuery(long xid, long timeout, String ap, Dpid dpid) {
-        super(xid, timeout);
+    public GetClientsQuery(long xid, String ap, Dpid dpid) {
+        super(xid);
         this.ap = ap;
         this.dpid = dpid;
     }
 
-    public GetClientsQuery(long xid, long timeout, String ap, Dpid dpid,
+    public GetClientsQuery(long xid, String ap, Dpid dpid,
                            SdwnTransactionTask followUpTask) {
-        super(xid, timeout, followUpTask);
+        super(xid, followUpTask);
         this.ap = ap;
         this.dpid = dpid;
     }

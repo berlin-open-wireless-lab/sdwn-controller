@@ -93,9 +93,6 @@ public interface SdwnCoreService {
      */
     SdwnClient getClient(MacAddress mac);
 
-    boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp);
-    boolean handOver(SdwnClient client, SdwnAccessPoint toAp);
-
     /**
      * Make an AP change its operating channel. The AP will send a Channel Switch
      * Announcement.

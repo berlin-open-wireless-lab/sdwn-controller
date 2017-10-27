@@ -16,8 +16,8 @@ public class AddClientTask extends DefaultSdwnTransaction {
     private SdwnClient client;
     private SdwnAccessPoint ap;
 
-    public AddClientTask(long xid, long timeout, SdwnClient client, SdwnAccessPoint ap) {
-        super(xid, timeout);
+    public AddClientTask(long xid, SdwnClient client, SdwnAccessPoint ap) {
+        super(xid);
         this.client = client;
         this.ap = ap;
     }

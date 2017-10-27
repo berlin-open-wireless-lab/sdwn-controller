@@ -37,7 +37,6 @@ import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
 import de.tuberlin.inet.sdwn.core.api.SdwnTransactionManager;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
-import de.tuberlin.inet.sdwn.core.ctl.task.HandoverTask;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -150,7 +149,7 @@ public class SdwnController implements SdwnCoreService {
     private long transactionTimeout = DEFAULT_TRANSACTION_TIMEOUT;
 
     private XidGenerator xidGen = XidGenerators.create();
-    protected SdwnTransactionManager sdwnManager = new DefaultSdwnTransactionManager(this, transactionTimeout);
+    protected SdwnTransactionManager sdwnManager = new DefaultSdwnTransactionManager(this);
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
     protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
     protected Set<SdwnClientListener> clientListeners = new ConcurrentSet<>();
@@ -337,33 +336,13 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        sdwnManager.startTransaction(new DelClientTask(xid, 10, client, client.ap()));
+        sdwnManager.startTransaction(new DelClientTask(xid, client, client.ap()), 5000);
         return true;
     }
 
     @Override
     public void removeClient(SdwnClient client) {
         client.disassoc();
-    }
-
-    @Override
-    public boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp) {
-        checkNotNull(toAp);
-
-        SdwnClient client;
-        if (clientMac == null || (client = store.getClient(clientMac)) == null) {
-            log.error("Unknown client: {}", clientMac);
-            return false;
-        }
-
-        return startHandOver(client, toAp);
-    }
-
-    @Override
-    public boolean handOver(SdwnClient client, SdwnAccessPoint toAp) {
-        checkNotNull(client);
-        checkNotNull(toAp);
-        return startHandOver(client, toAp);
     }
 
     @Override
@@ -477,7 +456,7 @@ public class SdwnController implements SdwnCoreService {
                     store.putAp(ap, nic);
                     OFSdwnGetClientsRequest msg = buildGetClientsMessage(sw, ap);
                     getClientsMsgs.add(msg);
-                    sdwnManager.startTransaction(new GetClientsQuery(msg.getXid(), 3000, ap.name(), dpid));
+                    sdwnManager.startTransaction(new GetClientsQuery(msg.getXid(), ap.name(), dpid), 5000);
                 });
             }
 
@@ -610,7 +589,7 @@ public class SdwnController implements SdwnCoreService {
             cmdBuilder.setKeys(ClientCryptoKeys.toOF(client.keys(), sw.factory()));
         }
 
-        sdwnManager.startTransaction(new AddClientTask(xidGen.nextXid(), 3000, client, ap));
+        sdwnManager.startTransaction(new AddClientTask(xidGen.nextXid(), client, ap), 3000);
         log.info("Sending {}", cmdBuilder.build());
         sw.sendMsg(cmdBuilder.build());
         return true;
@@ -710,24 +689,6 @@ public class SdwnController implements SdwnCoreService {
                 .setBssid(org.projectfloodlight.openflow.types.MacAddress.of(bssid.toBytes()))
                 .build();
         sw.sendMsg(cmd);
-    }
-
-    private boolean startHandOver(SdwnClient client, SdwnAccessPoint toAp) {
-        if (client.ap().equals(toAp)) {
-            log.error("Client {} is already associated with AP {} on {}", client.macAddress(), toAp.bssid(), toAp.nic().switchID());
-            return false;
-        }
-
-        log.info("Handing over {} from {} on {} to {} on {}", client.macAddress(),
-                 client.ap().name(), client.ap().nic().switchID(), toAp.name(), toAp.nic().switchID());
-
-        long xid = xidGen.nextXid();
-
-        if (!sendDelClient(client.ap(), client, 1, true, 10, xid)) {
-            return false;
-        }
-        sdwnManager.startTransaction(new HandoverTask(xid, 8000, toAp, client));
-        return true;
     }
 
     private class InternalSdwnMessageListener implements OpenFlowMessageListener {
