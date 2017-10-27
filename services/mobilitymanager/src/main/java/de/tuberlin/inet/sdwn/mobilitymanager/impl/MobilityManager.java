@@ -107,8 +107,8 @@ public class MobilityManager implements SdwnMobilityManager {
 
         log.info("Starting handover of {} to {}:{}", c.macAddress(), dst.nic().switchID(), dst.name());
 
-        HandoverTransactionContext handover = new HandoverTransactionContext(timeout, dst, c);
-        controller.startTransaction(handover);
+        HandoverTransactionContext handover = new HandoverTransactionContext(dst, c);
+        controller.startTransaction(handover, timeout);
         ongoingHandovers.put(c.macAddress(), handover);
     }
 

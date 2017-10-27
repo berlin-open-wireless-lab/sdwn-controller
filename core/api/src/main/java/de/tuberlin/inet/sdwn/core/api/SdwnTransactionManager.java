@@ -3,6 +3,8 @@ package de.tuberlin.inet.sdwn.core.api;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 
+import java.awt.font.TransformAttribute;
+
 /**
  * Management context for {@code SdwnTransactionContext}s.
  */
@@ -18,7 +20,7 @@ public interface SdwnTransactionManager {
      *
      * @param t the transaction
      */
-    void startTransaction(SdwnTransactionContext t);
+    void startTransaction(SdwnTransactionContext t, long timeout);
 
     /**
      * Cancel a transaction

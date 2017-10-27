@@ -31,8 +31,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
     private final SdwnAccessPoint dst;
     private final SdwnClient client;
 
-    public HandoverTransactionContext(long timeout, SdwnAccessPoint ap, SdwnClient client) {
-        super(timeout);
+    public HandoverTransactionContext(SdwnAccessPoint ap, SdwnClient client) {
         this.client = client;
         this.dst = ap;
     }

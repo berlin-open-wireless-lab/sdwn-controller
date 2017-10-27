@@ -336,6 +336,7 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
                     .put("capability_match", capMatch)
                     .put("capability_script", capScript);
 
+            // TODO: ?key=blablubb_onos
             return client.target(url.toString() + "/service")
                     .request(MediaType.TEXT_PLAIN_TYPE)
                     .header("Content-Type", "application/json")

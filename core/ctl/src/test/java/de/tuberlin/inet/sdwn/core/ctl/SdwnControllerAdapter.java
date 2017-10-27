@@ -118,7 +118,7 @@ public class SdwnControllerAdapter implements SdwnCoreService {
     }
 
     @Override
-    public long startTransaction(SdwnTransactionContext t) {
+    public long startTransaction(SdwnTransactionContext t, long timeout) {
         return 0;
     }
 

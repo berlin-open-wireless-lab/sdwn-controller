@@ -135,7 +135,8 @@ public class SdwnController implements SdwnCoreService {
     private long transactionTimeout = DEFAULT_TRANSACTION_TIMEOUT;
 
     private XidGenerator xidGen = XidGenerators.create();
-    protected SdwnTransactionManager transactionManager = new TransactionManager(this, transactionTimeout);
+    protected SdwnTransactionManager transactionManager = new DefaultSdwnTransactionManager(this);
+
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
     protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
     protected Set<SdwnClientListener> clientListeners = new ConcurrentSet<>();
@@ -319,7 +320,7 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        transactionManager.startTransaction(new DelClientContext(xid, 10, client, client.ap()));
+        transactionManager.startTransaction(new DelClientContext(xid, client, client.ap()), 5000);
         return true;
     }
 
@@ -327,26 +328,6 @@ public class SdwnController implements SdwnCoreService {
     public void removeClient(SdwnClient client) {
         client.disassoc();
     }
-
-//    @Override
-//    public boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp) {
-//        checkNotNull(toAp);
-//
-//        SdwnClient client;
-//        if (clientMac == null || (client = store.getClient(clientMac)) == null) {
-//            log.error("Unknown client: {}", clientMac);
-//            return false;
-//        }
-//
-//        return startHandOver(client, toAp);
-//    }
-//
-//    @Override
-//    public boolean handOver(SdwnClient client, SdwnAccessPoint toAp) {
-//        checkNotNull(client);
-//        checkNotNull(toAp);
-//        return startHandOver(client, toAp);
-//    }
 
     @Override
     public boolean setChannel(Dpid dpid, int ifNo, int freq, int beaconCount) {
@@ -382,7 +363,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public long startTransaction(SdwnTransactionContext t) {
+    public long startTransaction(SdwnTransactionContext t, long timeout) {
         long xid;
 
         if (t.xid() == SdwnTransactionContext.NO_XID) {
@@ -394,24 +375,9 @@ public class SdwnController implements SdwnCoreService {
 
         log.info("Starting transaction {}", t);
 
-        transactionManager.startTransaction(t);
+        transactionManager.startTransaction(t, timeout);
         return xid;
     }
-
-    //    @Override
-//    public void sendProbeResponse(MacAddress staMac, SdwnAccessPoint ap, long xid, boolean denied) {
-//        send80211MgmtReply(staMac, ap, xid, denied);
-//    }
-//
-//    @Override
-//    public void sendAuthResponse(MacAddress staMac, SdwnAccessPoint ap, long xid, boolean denied) {
-//        send80211MgmtReply(staMac, ap, xid, denied);
-//    }
-//
-//    @Override
-//    public void sendAssocResponse(MacAddress staMac, SdwnAccessPoint ap, long xid, boolean denied) {
-//        send80211MgmtReply(staMac, ap, xid, denied);
-//    }
 
     private void send80211MgmtReply(MacAddress client, SdwnAccessPoint ap, long xid, boolean denied) {
         Dpid dpid = ap.nic().switchID();
@@ -466,6 +432,8 @@ public class SdwnController implements SdwnCoreService {
                     .map(nicEntity -> Nic.fromOF(dpid, nicEntity, sw.sdwnEntities()))
                     .collect(Collectors.toList());
 
+            log.info("NICS: {}", sw.nicEntities());
+
             store.putNics(nics);
 
             List<OFMessage> getClientsMsgs = new LinkedList<>();
@@ -474,7 +442,7 @@ public class SdwnController implements SdwnCoreService {
                     store.putAp(ap, nic);
                     OFSdwnGetClientsRequest msg = buildGetClientsMessage(sw, ap);
                     getClientsMsgs.add(msg);
-                    transactionManager.startTransaction(new GetClientsQuery(msg.getXid(), 3000, ap.name(), dpid));
+                    transactionManager.startTransaction(new GetClientsQuery(msg.getXid(), ap.name(), dpid), 5000);
                 });
             }
 
@@ -607,7 +575,7 @@ public class SdwnController implements SdwnCoreService {
             cmdBuilder.setKeys(ClientCryptoKeys.toOF(client.keys(), sw.factory()));
         }
 
-        transactionManager.startTransaction(new AddClientContext(xidGen.nextXid(), 3000, client, ap));
+        transactionManager.startTransaction(new AddClientContext(xidGen.nextXid(), client, ap), 3000);
         log.info("Sending {}", cmdBuilder.build());
         sw.sendMsg(cmdBuilder.build());
         return true;
@@ -708,24 +676,6 @@ public class SdwnController implements SdwnCoreService {
                 .build();
         sw.sendMsg(cmd);
     }
-
-//    private boolean startHandOver(SdwnClient client, SdwnAccessPoint toAp) {
-//        if (client.ap().equals(toAp)) {
-//            log.error("Client {} is already associated with AP {} on {}", client.macAddress(), toAp.bssid(), toAp.nic().switchID());
-//            return false;
-//        }
-//
-//        log.info("Handing over {} from {} on {} to {} on {}", client.macAddress(),
-//                 client.ap().name(), client.ap().nic().switchID(), toAp.name(), toAp.nic().switchID());
-//
-//        long xid = xidGen.nextXid();
-//
-//        if (!sendDelClient(client.ap(), client, 1, true, 10, xid)) {
-//            return false;
-//        }
-//        transactionManager.startTransaction(new HandoverTask(xid, 8000, toAp, client));
-//        return true;
-//    }
 
     private class InternalSdwnMessageListener implements OpenFlowMessageListener {
 

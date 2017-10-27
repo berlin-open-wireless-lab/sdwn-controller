@@ -1,11 +1,6 @@
 package de.tuberlin.inet.sdwn.core.api;
 
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
-import org.onlab.util.Timer;
 import org.slf4j.Logger;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -13,28 +8,24 @@ public abstract class DefaultSdwnTransactionContext implements SdwnTransactionCo
 
     protected long xid;
     protected SdwnTransactionManager transactionManager;
-    protected Timeout timeout;
+
     protected SdwnTransactionContext followupTask;
 
     protected final Logger log = getLogger(getClass());
 
-    public DefaultSdwnTransactionContext(long timeout) {
+    public DefaultSdwnTransactionContext() {
         xid = NO_XID;
-        this.timeout = Timer.getTimer().newTimeout(new TransactionTimeout(this), timeout, TimeUnit.MILLISECONDS);
     }
 
-    public DefaultSdwnTransactionContext(long xid, long timeout) {
-        this(timeout);
+    public DefaultSdwnTransactionContext(long xid) {
         this.xid = xid;
     }
 
-    public DefaultSdwnTransactionContext(long timeout, SdwnTransactionContext task) {
-        this(timeout);
+    public DefaultSdwnTransactionContext(SdwnTransactionContext task) {
         followupTask = task;
     }
 
-    public DefaultSdwnTransactionContext(long xid, long timeout, SdwnTransactionContext task) {
-        this(xid, timeout);
+    public DefaultSdwnTransactionContext(long xid, SdwnTransactionContext task) {
         followupTask = task;
     }
 
@@ -58,6 +49,10 @@ public abstract class DefaultSdwnTransactionContext implements SdwnTransactionCo
     }
 
     @Override
+    public void done() {
+    }
+
+    @Override
     public boolean hasFollowupTask() {
         return this.followupTask != null;
     }
@@ -71,20 +66,5 @@ public abstract class DefaultSdwnTransactionContext implements SdwnTransactionCo
     @Override
     public SdwnTransactionContext followupTask() {
         return this.followupTask;
-    }
-
-    private class TransactionTimeout implements TimerTask {
-
-        private SdwnTransactionContext task;
-
-        TransactionTimeout(SdwnTransactionContext t) {
-            task = t;
-        }
-
-        @Override
-        public void run(Timeout timeout) throws Exception {
-            transactionManager.cancelTransaction(task);
-            task.timeout();
-        }
     }
 }

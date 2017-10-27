@@ -16,8 +16,8 @@ public class AddClientContext extends DefaultSdwnTransactionContext {
     private SdwnClient client;
     private SdwnAccessPoint ap;
 
-    public AddClientContext(long xid, long timeout, SdwnClient client, SdwnAccessPoint ap) {
-        super(xid, timeout);
+    public AddClientContext(long xid, SdwnClient client, SdwnAccessPoint ap) {
+        super(xid);
         this.client = client;
         this.ap = ap;
     }
