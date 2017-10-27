@@ -14,7 +14,6 @@ public class GetClientsQuery extends DefaultSdwnTransaction {
 
     private final Dpid dpid;
     private final String ap;
-    private SdwnTransactionTask followUpTask;
 
     public GetClientsQuery(long xid, long timeout, String ap, Dpid dpid) {
         super(xid, timeout);
@@ -24,10 +23,9 @@ public class GetClientsQuery extends DefaultSdwnTransaction {
 
     public GetClientsQuery(long xid, long timeout, String ap, Dpid dpid,
                            SdwnTransactionTask followUpTask) {
-        super(xid, timeout);
+        super(xid, timeout, followUpTask);
         this.ap = ap;
         this.dpid = dpid;
-        this.followUpTask = followUpTask;
     }
 
     @Override
@@ -51,10 +49,6 @@ public class GetClientsQuery extends DefaultSdwnTransaction {
 
         transactionManager.controller().newClient(ap, newClient);
         boolean done = !reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE);
-        if (done && followUpTask != null) {
-            transactionManager.startTransaction(followUpTask);
-        }
-
         return done ? SdwnTransactionTask.TransactionStatus.DONE : SdwnTransactionTask.TransactionStatus.CONTINUE;
     }
 

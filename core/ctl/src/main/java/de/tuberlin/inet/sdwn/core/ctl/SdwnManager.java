@@ -34,7 +34,7 @@ public class SdwnManager implements SdwnTransactionManager {
 
     @Override
     public void cancelTransaction(SdwnTransactionTask t) {
-        transactions.unregisterTransaction(t);
+        transactions.removeTransaction(t);
     }
 
     @Override

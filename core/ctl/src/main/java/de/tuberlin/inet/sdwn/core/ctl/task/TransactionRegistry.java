@@ -6,6 +6,7 @@ import io.netty.util.TimerTask;
 import org.onlab.util.Timer;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,10 +16,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionTask.TransactionStatus.DONE;
 import static java.lang.System.currentTimeMillis;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class TransactionRegistry {
+
+    private Logger log = getLogger(getClass());
 
     private final long TIMEOUT;
     private Timeout timeout;
@@ -51,7 +54,7 @@ public class TransactionRegistry {
         }
     }
 
-    public void unregisterTransaction(SdwnTransactionTask t) {
+    public void removeTransaction(SdwnTransactionTask t) {
         transactions.remove(t.xid());
         if (transactions.isEmpty()) {
             timeout.cancel();
@@ -67,10 +70,7 @@ public class TransactionRegistry {
 
         switch (handler.task.update(dpid, ev)) {
             case DONE:
-                transactions.remove(ev.getXid());
-                if (transactions.isEmpty()) {
-                    timeout.cancel();
-                }
+                removeTransaction(handler.task);
                 break;
             case CONTINUE:
                 handler.timestamp = currentTimeMillis();
