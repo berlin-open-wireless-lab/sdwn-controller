@@ -101,8 +101,11 @@ public class MobilityManager implements SdwnMobilityManager {
         checkNotNull(dst);
 
         if (c.ap().equals(dst)) {
+            log.error("Aborting handover of {} to {}:{}: client is already associated with that AP.", c.macAddress(), dst.nic().switchID(), dst.name());
             return;
         }
+
+        log.info("Starting handover of {} to {}:{}", c.macAddress(), dst.nic().switchID(), dst.name());
 
         HandoverTransactionContext handover = new HandoverTransactionContext(timeout, dst, c);
         controller.startTransaction(handover);

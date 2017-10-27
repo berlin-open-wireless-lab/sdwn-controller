@@ -392,6 +392,8 @@ public class SdwnController implements SdwnCoreService {
             xid = t.xid();
         }
 
+        log.info("Starting transaction {}", t);
+
         transactionManager.startTransaction(t);
         return xid;
     }
