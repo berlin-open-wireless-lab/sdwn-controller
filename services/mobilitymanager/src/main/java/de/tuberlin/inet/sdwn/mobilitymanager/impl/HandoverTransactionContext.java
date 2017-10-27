@@ -48,14 +48,15 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void start() {
-        OFSdwnDelClient msg = OFFactoryVer13.INSTANCE.buildSdwnDelClient()
-                .setAp(OFPort.of(dst.portNumber()))
-                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(client.macAddress().toBytes()))
-                .setXid(xid)
-                .setBanTime(10000)
-                .build();
-
-        transactionManager.controller().sendMsg(client.ap().nic().switchID(), msg);
+//        OFSdwnDelClient msg = OFFactoryVer13.INSTANCE.buildSdwnDelClient()
+//                .setAp(OFPort.of(client.ap().portNumber()))
+//                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(client.macAddress().toBytes()))
+//                .setXid(xid)
+//                .setBanTime(10000)
+//                .build();
+//
+//        transactionManager.controller().sendMsg(client.ap().nic().switchID(), msg);
+        transactionManager.controller().removeClientFromAp(client.macAddress(), 10000);
     }
 
     @Override
