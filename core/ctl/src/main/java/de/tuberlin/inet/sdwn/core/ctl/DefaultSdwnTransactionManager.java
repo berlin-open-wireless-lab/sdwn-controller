@@ -30,6 +30,7 @@ public class DefaultSdwnTransactionManager implements SdwnTransactionManager {
     public void startTransaction(SdwnTransactionContext t, long timeout) {
         t.setManager(this);
         transactions.registerTransaction(t, timeout);
+        t.start();
     }
 
     @Override
