@@ -6,6 +6,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
+import org.projectfloodlight.openflow.protocol.OFMessage;
 
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -120,6 +121,11 @@ public class SdwnControllerAdapter implements SdwnCoreService {
     @Override
     public long startTransaction(SdwnTransactionContext t, long timeout) {
         return 0;
+    }
+
+    @Override
+    public boolean sendMsg(Dpid dpid, OFMessage msg) {
+        return false;
     }
 
     @Override

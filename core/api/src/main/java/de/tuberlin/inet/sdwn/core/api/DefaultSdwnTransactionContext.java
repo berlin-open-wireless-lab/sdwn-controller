@@ -49,6 +49,11 @@ public abstract class DefaultSdwnTransactionContext implements SdwnTransactionCo
     }
 
     @Override
+    public void start() {
+
+    }
+
+    @Override
     public void done() {
     }
 

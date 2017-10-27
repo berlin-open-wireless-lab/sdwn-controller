@@ -5,6 +5,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
+import org.projectfloodlight.openflow.protocol.OFMessage;
 
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -166,4 +167,13 @@ public interface SdwnCoreService {
      * Get the Datapath ID of the related OpenFlow siwitch for the given switch.
      */
     Dpid getRelatedOfSwitch(Dpid dpid);
+
+    /**
+     * Send a message to a switch.
+     *
+     * @param dpid Datapath ID of the destination switch
+     * @param msg OpenFlow message to send
+     * @return true on success, false on failure
+     */
+    boolean sendMsg(Dpid dpid, OFMessage msg);
 }

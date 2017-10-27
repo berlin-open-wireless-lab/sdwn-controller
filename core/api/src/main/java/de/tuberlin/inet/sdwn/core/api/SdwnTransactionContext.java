@@ -84,6 +84,11 @@ public interface SdwnTransactionContext {
     void timeout();
 
     /**
+     * Called once by the {@code SdwnTransactionManager} when the transaction is started.
+     */
+    void start();
+
+    /**
      * Callback invoked by the {@code SdwnTransactionManager} after a transaction has finished.
      */
     void done();

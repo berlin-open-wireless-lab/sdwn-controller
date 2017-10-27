@@ -373,7 +373,7 @@ public class SdwnController implements SdwnCoreService {
             xid = t.xid();
         }
 
-        log.info("Starting transaction {}", t);
+        log.info("Starting transaction {} (xid {})", t, xid);
 
         transactionManager.startTransaction(t, timeout);
         return xid;
@@ -411,6 +411,22 @@ public class SdwnController implements SdwnCoreService {
     @Override
     public Dpid getRelatedOfSwitch(Dpid dpid) {
         return store.relatedSwitch(dpid);
+    }
+
+    @Override
+    public boolean sendMsg(Dpid dpid, OFMessage msg) {
+        if (dpid == null || msg == null) {
+            return false;
+        }
+
+        OpenFlowSwitch ofsw = controller.getSwitch(dpid);
+        if (ofsw == null || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+            return false;
+        }
+
+        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) ofsw;
+        sw.sendMsg(msg);
+        return true;
     }
 
     private class InternalSwitchListener implements OpenFlowSwitchListener {

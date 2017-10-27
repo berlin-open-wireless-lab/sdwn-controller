@@ -21,7 +21,7 @@ public class GetClientsQuery extends DefaultSdwnTransactionContext {
         this.dpid = dpid;
     }
 
-    public GetClientsQuery(long xid, long timeout, String ap, Dpid dpid,
+    public GetClientsQuery(long xid, String ap, Dpid dpid,
                            SdwnTransactionContext followUpTask) {
         super(xid, followUpTask);
         this.ap = ap;
@@ -54,7 +54,7 @@ public class GetClientsQuery extends DefaultSdwnTransactionContext {
 
     @Override
     public void timeout() {
-        log.info("Get Stations Query for AP {} on {} timed out. Maybe the AP does not have any clients.",
-                 ap, dpid);
+        log.info("Get Stations Query for AP {} on {} timed out. This could just mean that the AP does not have any associated clients. There is no explicit signalling for that case, yet.",
+                ap, dpid);
     }
 }
