@@ -55,10 +55,12 @@ public class TransactionRegistry {
     }
 
     public void removeTransaction(SdwnTransactionTask t) {
+        log.info("Transactions before remove: {}", transactions);
         transactions.remove(t.xid());
         if (transactions.isEmpty()) {
             timeout.cancel();
         }
+        log.info("Transactions after remove: {}", transactions);
     }
 
     public synchronized boolean runEventHandlers(Dpid dpid, OFMessage ev) {
