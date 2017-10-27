@@ -59,6 +59,7 @@ public class SwitchesCommand extends AbstractShellCommand {
                         sb.append("\t\t\t- BSSID: ").append(ap.bssid().toString()).append("\n");
                         sb.append("\t\t\t- Number: ").append(ap.portNumber()).append("\n");
                         sb.append("\t\t\t- Frequency: ").append(ap.frequency().hz())
+                                .append(" MHz")
                                 .append(" (Channel ").append(Ieee80211Channels.frequencyToChannel(ap.frequency().hz())).append(")\n");
                     });
 

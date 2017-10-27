@@ -1,11 +1,6 @@
 package de.tuberlin.inet.sdwn.core.api;
 
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
-import org.onlab.util.Timer;
 import org.slf4j.Logger;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -13,28 +8,23 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
 
     protected long xid;
     protected SdwnTransactionManager transactionManager;
-    protected Timeout timeout;
     protected SdwnTransactionTask followupTask;
 
     protected final Logger log = getLogger(getClass());
 
-    public DefaultSdwnTransaction(long timeout) {
+    public DefaultSdwnTransaction() {
         xid = NO_XID;
-        this.timeout = Timer.getTimer().newTimeout(new TransactionTimeout(this), timeout, TimeUnit.MILLISECONDS);
     }
 
-    public DefaultSdwnTransaction(long xid, long timeout) {
-        this(timeout);
+    public DefaultSdwnTransaction(long xid) {
         this.xid = xid;
     }
 
-    public DefaultSdwnTransaction(long timeout, SdwnTransactionTask task) {
-        this(timeout);
+    public DefaultSdwnTransaction(SdwnTransactionTask task) {
         followupTask = task;
     }
 
-    public DefaultSdwnTransaction(long xid, long timeout, SdwnTransactionTask task) {
-        this(xid, timeout);
+    public DefaultSdwnTransaction(long xid, SdwnTransactionTask task) {
         followupTask = task;
     }
 
@@ -58,6 +48,10 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
     }
 
     @Override
+    public void done() {
+    }
+
+    @Override
     public boolean hasFollowupTask() {
         return this.followupTask != null;
     }
@@ -71,20 +65,5 @@ public abstract class DefaultSdwnTransaction implements SdwnTransactionTask {
     @Override
     public SdwnTransactionTask followupTask() {
         return this.followupTask;
-    }
-
-    private class TransactionTimeout implements TimerTask {
-
-        private SdwnTransactionTask task;
-
-        TransactionTimeout(SdwnTransactionTask t) {
-            task = t;
-        }
-
-        @Override
-        public void run(Timeout timeout) throws Exception {
-            transactionManager.cancelTransaction(task);
-            task.timeout();
-        }
     }
 }

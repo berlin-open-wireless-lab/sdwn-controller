@@ -10,34 +10,23 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static java.lang.System.currentTimeMillis;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class TransactionRegistry {
 
-    private Logger log = getLogger(getClass());
-
-    private final long TIMEOUT;
-    private Timeout timeout;
-
-    private final Map<Long, TransactionHandler> transactions = new HashMap<>();
+    private final Map<Long, TransactionContext> transactions = new HashMap<>();
     private final Set<SdwnTransactionTask> allMsgHandlers = new HashSet<>();
-
-    public TransactionRegistry(long timeout) {
-        TIMEOUT = timeout;
-    }
 
     public boolean ongoing(long xid) {
         return transactions.containsKey(xid);
     }
 
-    public void registerTransaction(SdwnTransactionTask t) {
+    public void registerTransaction(SdwnTransactionTask t, long timeout) {
         if (t.xid() == SdwnTransactionTask.NO_XID) {
             return;
         }
@@ -49,22 +38,13 @@ public class TransactionRegistry {
                 return;
             }
 
-            transactions.put(t.xid(), new TransactionHandler(t));
-
-            if (transactions.size() == 1) {
-                timeout = Timer.getTimer().newTimeout(new PeriodicCleanup(), TIMEOUT, TimeUnit.SECONDS);
-            }
+            transactions.put(t.xid(), new TransactionContext(t, timeout));
         }
     }
 
     public void removeTransaction(SdwnTransactionTask t) {
         synchronized (transactions) {
-            log.info("Transactions before remove: {}", transactions);
             transactions.remove(t.xid());
-            if (transactions.isEmpty()) {
-                timeout.cancel();
-            }
-            log.info("Transactions after remove: {}", transactions);
         }
     }
 
@@ -73,60 +53,70 @@ public class TransactionRegistry {
 
             allMsgHandlers.forEach(t -> t.update(dpid, ev));
 
-            TransactionHandler handler = transactions.get(ev.getXid());
-            if (handler == null)
+            TransactionContext ctx = transactions.get(ev.getXid());
+            if (ctx == null)
                 return false;
 
-            switch (handler.task.update(dpid, ev)) {
+            return !ctx.doUpdate(dpid, ev).equals(SdwnTransactionTask.TransactionStatus.SKIP);
+        }
+    }
+
+    private class TransactionContext {
+
+        private SdwnTransactionTask task;
+        private Timeout timeout;
+        private long timeoutVal;
+
+
+        TransactionContext(SdwnTransactionTask t, long timeout) {
+            task = t;
+            timeoutVal = timeout;
+            this.timeout = Timer.getTimer().newTimeout(new TransactionTimeout(t), timeout, TimeUnit.MILLISECONDS);
+        }
+
+        SdwnTransactionTask.TransactionStatus doUpdate(Dpid dpid, OFMessage msg) {
+            SdwnTransactionTask.TransactionStatus status = task.update(dpid, msg);
+
+            switch (status) {
                 case DONE:
-                    removeTransaction(handler.task);
+                    timeout.cancel();
+                    removeTransaction(task);
                     break;
                 case CONTINUE:
-                    handler.timestamp = currentTimeMillis();
+                    timeout.timer().newTimeout(new TransactionTimeout(task), timeoutVal, TimeUnit.MILLISECONDS);
                     break;
                 case NEXT:
-                    transactions.remove(ev.getXid());
-                    if (handler.task.hasFollowupTask()) {
-                        registerTransaction(handler.task.followupTask());
+                    removeTransaction(task);
+                    if (task.hasFollowupTask()) {
+                        registerTransaction(task.followupTask(), timeoutVal);
                     }
                     break;
 
             }
-            return true;
-        }
-    }
-
-    private class TransactionHandler {
-        long timestamp;
-        SdwnTransactionTask task;
-
-        TransactionHandler(SdwnTransactionTask t) {
-            timestamp = currentTimeMillis();
-            task = t;
+            return status;
         }
 
         @Override
         public boolean equals(Object obj) {
-            return (obj instanceof TransactionHandler) &&
-                    ((TransactionHandler) obj).task == this;
+            return (obj instanceof TransactionContext) &&
+                    ((TransactionContext) obj).task == this;
         }
     }
 
-    private class PeriodicCleanup implements TimerTask {
+
+    private class TransactionTimeout implements TimerTask {
+
+        private SdwnTransactionTask task;
+
+        TransactionTimeout(SdwnTransactionTask t) {
+            task = t;
+        }
 
         @Override
         public void run(Timeout timeout) throws Exception {
             synchronized (transactions) {
-                long now = currentTimeMillis();
-                List<Long> toRemove = transactions.keySet().stream()
-                        .filter(key -> now - transactions.get(key).timestamp > TIMEOUT)
-                        .collect(Collectors.toList());
-
-                toRemove.forEach(transactions::remove);
-
-                if (!transactions.isEmpty()) {
-                    Timer.getTimer().newTimeout(new PeriodicCleanup(), TIMEOUT, TimeUnit.SECONDS);
-                }
+                transactions.remove(task.xid());
+                task.timeout();
             }
         }
     }

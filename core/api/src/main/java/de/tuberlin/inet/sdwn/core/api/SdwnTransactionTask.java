@@ -82,4 +82,9 @@ public interface SdwnTransactionTask {
      * Callback invoked by the {@code SdwnTransactionManager} after a transaction has timed out.
      */
     void timeout();
+
+    /**
+     * Callback invoked by the {@code SdwnTransactionManager} after a transaction has finished.
+     */
+    void done();
 }

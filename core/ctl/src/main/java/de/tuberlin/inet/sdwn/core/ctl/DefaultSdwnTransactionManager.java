@@ -7,13 +7,13 @@ import de.tuberlin.inet.sdwn.core.ctl.task.TransactionRegistry;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 
-public class SdwnManager implements SdwnTransactionManager {
+public class DefaultSdwnTransactionManager implements SdwnTransactionManager {
 
     private final SdwnCoreService controller;
     private TransactionRegistry transactions;
 
-    public SdwnManager(SdwnController controller, long transactionStateTimeout) {
-        this.transactions = new TransactionRegistry(transactionStateTimeout);
+    public DefaultSdwnTransactionManager(SdwnController controller) {
+        this.transactions = new TransactionRegistry();
         this.controller = controller;
     }
 
@@ -27,9 +27,9 @@ public class SdwnManager implements SdwnTransactionManager {
     }
 
     @Override
-    public void startTransaction(SdwnTransactionTask t) {
+    public void startTransaction(SdwnTransactionTask t, long timeout) {
         t.setManager(this);
-        transactions.registerTransaction(t);
+        transactions.registerTransaction(t, timeout);
     }
 
     @Override

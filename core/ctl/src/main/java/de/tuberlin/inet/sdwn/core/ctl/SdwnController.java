@@ -150,7 +150,7 @@ public class SdwnController implements SdwnCoreService {
     private long transactionTimeout = DEFAULT_TRANSACTION_TIMEOUT;
 
     private XidGenerator xidGen = XidGenerators.create();
-    protected SdwnTransactionManager sdwnManager = new SdwnManager(this, transactionTimeout);
+    protected SdwnTransactionManager sdwnManager = new DefaultSdwnTransactionManager(this, transactionTimeout);
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
     protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
     protected Set<SdwnClientListener> clientListeners = new ConcurrentSet<>();
