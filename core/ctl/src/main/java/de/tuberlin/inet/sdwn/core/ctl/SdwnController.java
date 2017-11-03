@@ -285,6 +285,17 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
+    public OpenFlowWirelessSwitch getSwitch(Dpid dpid) {
+        checkNotNull(dpid);
+        OpenFlowSwitch sw = controller.getSwitch(dpid);
+
+        if (sw == null || !(sw instanceof OpenFlowWirelessSwitch)) {
+            return null;
+        }
+        return (OpenFlowWirelessSwitch) sw;
+    }
+
+    @Override
     public void newClient(SdwnAccessPoint atAp, SdwnClient client) {
         if (atAp == null || client == null) {
             return;
@@ -320,7 +331,23 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        transactionManager.startTransaction(new DelClientContext(xid, client, client.ap()), 5000);
+        transactionManager.startTransaction(new DelClientContext(xid, client, client.ap(), banTime), 5000);
+        return true;
+    }
+
+    @Override
+    public boolean sendMessage(Dpid dpid, OFMessage msg) {
+        checkNotNull(dpid);
+        checkNotNull(msg);
+
+        OpenFlowSwitch ofsw = controller.getSwitch(dpid);
+
+        if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+            // TODO log error
+            return false;
+        }
+
+        ofsw.sendMsg(msg);
         return true;
     }
 

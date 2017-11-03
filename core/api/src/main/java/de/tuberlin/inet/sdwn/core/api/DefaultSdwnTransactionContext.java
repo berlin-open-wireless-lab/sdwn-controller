@@ -7,7 +7,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public abstract class DefaultSdwnTransactionContext implements SdwnTransactionContext {
 
     protected long xid;
-    protected SdwnTransactionManager transactionManager;
+    protected SdwnTransactionManager manager;
 
     protected SdwnTransactionContext followupTask;
 
@@ -36,7 +36,7 @@ public abstract class DefaultSdwnTransactionContext implements SdwnTransactionCo
 
     @Override
     public void setManager(SdwnTransactionManager m) {
-        transactionManager = m;
+        manager = m;
     }
 
     @Override

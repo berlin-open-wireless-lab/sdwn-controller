@@ -250,7 +250,7 @@ public class Client implements SdwnClient {
 
     public static Client fromJson(ObjectNode node) throws IllegalArgumentException {
         MacAddress mac = MacAddress.valueOf(node.get("mac").asText());
-        List<SdwnTransmissionRate> rates = null;
+        List<SdwnTransmissionRate> rates;
 
         if (node.has("transmission_rates")) {
             rates = TransmissionRate.fromJson((ArrayNode) node.get("transmission_rates"));

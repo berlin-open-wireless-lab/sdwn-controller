@@ -4,20 +4,18 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onosproject.openflow.controller.Dpid;
+import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnAddClient;
 import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
 import org.projectfloodlight.openflow.types.MacAddress;
+import org.projectfloodlight.openflow.types.OFPort;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.CONTINUE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.DONE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.SKIP;
 
-/*
- * FIXME
- * When multiple handover transactions are happening simultaneously, the one with the higher priority will deny the necessary
- * assoc/auth requests. We need to track all ongoing transactions and globally grant and deny these requests.
- */
 
 public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
@@ -46,7 +44,16 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void start() {
-        transactionManager.controller().removeClientFromAp(client.macAddress(), 10000);
+        OpenFlowWirelessSwitch sw = manager.controller().getSwitch(client.ap().nic().switchID());
+        checkNotNull(sw);
+
+        sw.sendMsg(sw.factory().buildSdwnDelClient()
+                .setXid(xid)
+                .setBanTime(10000)
+                .setReason(1)
+                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(client.macAddress().toBytes()))
+                .setAp(OFPort.of(client.ap().portNumber()))
+                .build());
     }
 
     @Override
@@ -59,19 +66,28 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
         switch (state) {
             case STATE_DEL_CLIENT:
                 if (((OFSdwnDelClient) msg).getClient().equals(MacAddress.of(client.macAddress().toBytes()))) {
-                    transactionManager.controller().addClientToAp(dst, client);
                     state = State.STATE_ADD_CLIENT;
+                    log.info("Handover update! {} disassociated from {}:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
+                    client.disassoc();
                 }
                 break;
             case STATE_ADD_CLIENT:
                 OFSdwnAddClient addClientMsg = (OFSdwnAddClient) msg;
                 if (addClientMsg.getClient().equals(MacAddress.of(client.macAddress().toBytes())) &&
                         addClientMsg.getAp().getPortNumber() == dst.portNumber()) {
+                    log.info("Handover finished! {} is now associated with {}:{}", client.macAddress(), dst.nic().switchID(), dst.name());
+                    client.assoc(dst);
                     return DONE;
                 }
                 break;
         }
 
         return CONTINUE;
+    }
+
+    @Override
+    public void timeout() {
+        log.error("Handover failed! {} ({}:{} -> {}:{})", client.macAddress(), client.ap().nic().switchID(), client.ap().name(),
+                dst.nic().switchID(), dst.name());
     }
 }

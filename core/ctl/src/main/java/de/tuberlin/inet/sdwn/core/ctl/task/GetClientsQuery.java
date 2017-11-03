@@ -37,7 +37,7 @@ public class GetClientsQuery extends DefaultSdwnTransactionContext {
 
         OFSdwnGetClientsReply reply = (OFSdwnGetClientsReply) msg;
 
-        SdwnAccessPoint ap = transactionManager.controller().apByDpidAndName(dpid, this.ap);
+        SdwnAccessPoint ap = manager.controller().apByDpidAndName(dpid, this.ap);
         if (ap == null) {
             return SdwnTransactionContext.TransactionStatus.DONE;
         }
@@ -47,7 +47,7 @@ public class GetClientsQuery extends DefaultSdwnTransactionContext {
             return SdwnTransactionContext.TransactionStatus.DONE;
         }
 
-        transactionManager.controller().newClient(ap, newClient);
+        manager.controller().newClient(ap, newClient);
         boolean done = !reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE);
         return done ? SdwnTransactionContext.TransactionStatus.DONE : SdwnTransactionContext.TransactionStatus.CONTINUE;
     }

@@ -5,6 +5,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
+import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 
 import java.util.NoSuchElementException;
@@ -70,13 +71,24 @@ public interface SdwnCoreService {
     boolean addClientToAp(SdwnAccessPoint dstAp, SdwnClient client);
 
     /**
-     * Send an Delete Client message to the switch hosting the client's AP.
+     * Send a Delete Client message to the switch hosting the client's AP.
      *
      * @param mac the client's MAC address
      * @param banTime time the client will be banned from re-association (in ms)
      * @return true on success, false otherwise
      */
     boolean removeClientFromAp(MacAddress mac, long banTime);
+
+    /**
+     * Send an OpenFlow message to a switch
+     *
+     * @param dpid the switch's datapath ID
+     * @param msg the message
+     * @return true on success, false on failure
+     */
+    boolean sendMessage(Dpid dpid, OFMessage msg);
+
+    OpenFlowWirelessSwitch getSwitch(Dpid dpid);
 
     /**
      * Remove all state related to the given client from the controller. This

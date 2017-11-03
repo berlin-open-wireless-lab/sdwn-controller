@@ -19,6 +19,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class TransactionRegistry {
 
+    private final Logger log = getLogger(getClass());
 
     private final Map<Long, TransactionContext> transactions = new HashMap<>();
     private final Set<SdwnTransactionContext> allMsgHandlers = new HashSet<>();
@@ -30,11 +31,11 @@ public class TransactionRegistry {
 
     public void registerTransaction(SdwnTransactionContext t, long timeout) {
         if (t.xid() == SdwnTransactionContext.NO_XID) {
+            log.error("Cannot register transaction context {}: no XID given", t);
             return;
         }
 
         synchronized (transactions) {
-
             if (t.xid() == SdwnTransactionContext.ANY_XID) {
                 allMsgHandlers.add(t);
                 return;
