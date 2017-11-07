@@ -67,7 +67,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
             case STATE_DEL_CLIENT:
                 if (((OFSdwnDelClient) msg).getClient().equals(MacAddress.of(client.macAddress().toBytes()))) {
                     state = State.STATE_ADD_CLIENT;
-                    log.info("Handover update! {} disassociated from {}:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
+                    log.info("Handover update! {} disassociated from [{}]:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
                     client.disassoc();
                 }
                 break;
@@ -75,7 +75,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
                 OFSdwnAddClient addClientMsg = (OFSdwnAddClient) msg;
                 if (addClientMsg.getClient().equals(MacAddress.of(client.macAddress().toBytes())) &&
                         addClientMsg.getAp().getPortNumber() == dst.portNumber()) {
-                    log.info("Handover finished! {} is now associated with {}:{}", client.macAddress(), dst.nic().switchID(), dst.name());
+                    log.info("Handover finished! {} is now associated with [{}]:{}", client.macAddress(), dst.nic().switchID(), dst.name());
                     client.assoc(dst);
                     return DONE;
                 }
@@ -87,6 +87,6 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void timeout() {
-        log.error("Handover failed! {} -> {}:{}", client.macAddress(), dst.nic().switchID(), dst.name());
+        log.error("Handover failed! {} -> [{}]:{}", client.macAddress(), dst.nic().switchID(), dst.name());
     }
 }

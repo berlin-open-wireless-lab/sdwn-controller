@@ -101,11 +101,11 @@ public class MobilityManager implements SdwnMobilityManager {
         checkNotNull(dst);
 
         if (c.ap().equals(dst)) {
-            log.error("Aborting handover of {} to {}:{}: client is already associated with that AP.", c.macAddress(), dst.nic().switchID(), dst.name());
+            log.error("Aborting handover. {} -> [{}]:{}: already associated with that AP.", c.macAddress(), dst.nic().switchID(), dst.name());
             return;
         }
 
-        log.info("Starting handover of {} to {}:{}", c.macAddress(), dst.nic().switchID(), dst.name());
+        log.info("Starting handover: {}: [{}]:{} -> [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name(), dst.nic().switchID(), dst.name());
 
         HandoverTransactionContext handover = new HandoverTransactionContext(dst, c);
         controller.startTransaction(handover, timeout);
@@ -119,7 +119,7 @@ public class MobilityManager implements SdwnMobilityManager {
         public void clientAssociated(SdwnClient c) {
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(c.ap())) {
-                    log.info("Handover finished. {} is now associated with {}:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
+                    log.info("Handover finished. {} is now associated with [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
                 }
             }
         }
@@ -128,7 +128,7 @@ public class MobilityManager implements SdwnMobilityManager {
         public void clientDisassociated(SdwnClient c, SdwnAccessPoint fromAp) {
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(fromAp)) {
-                    log.info("Handover started. {} disassociated from {}:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
+                    log.info("Handover started. {} disassociated from [{}]:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
                 }
             }
         }
@@ -157,7 +157,9 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public ResponseAction receivedAuthRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+            log.info("Got AUTH request");
             if (ongoingHandovers.containsKey(clientMac)) {
+                log.info("Matched AUTH request");
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.client().ap().equals(atAP)) {
@@ -172,7 +174,9 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public ResponseAction receivedAssocRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+            log.info("Got ASSOC request");
             if (ongoingHandovers.containsKey(clientMac)) {
+                log.info("Matched ASSOC request");
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.client().ap().equals(atAP)) {
