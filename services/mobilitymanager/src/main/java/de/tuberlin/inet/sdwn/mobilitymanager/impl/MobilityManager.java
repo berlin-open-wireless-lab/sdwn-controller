@@ -117,6 +117,7 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public void clientAssociated(SdwnClient c) {
+            log.info("client {} associated withs [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(c.ap())) {
                     log.info("Handover finished. {} is now associated with [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
@@ -126,6 +127,7 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public void clientDisassociated(SdwnClient c, SdwnAccessPoint fromAp) {
+            log.info("client {} disassociated from [{}]:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(fromAp)) {
                     log.info("Handover started. {} disassociated from [{}]:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
