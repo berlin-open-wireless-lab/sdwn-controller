@@ -87,7 +87,6 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void timeout() {
-        log.error("Handover failed! {} ({}:{} -> {}:{})", client.macAddress(), client.ap().nic().switchID(), client.ap().name(),
-                dst.nic().switchID(), dst.name());
+        log.error("Handover failed! {} -> {}:{}", client.macAddress(), dst.nic().switchID(), dst.name());
     }
 }
