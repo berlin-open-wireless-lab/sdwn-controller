@@ -42,7 +42,7 @@ public class MobilityManager implements SdwnMobilityManager {
     private int mobilityManagerMgmtFramePrio = DEFAULT_MOBILITY_MANAGER_80211_MGMT_PRIORITY;
 
     private static final String MOBILITY_MANAGER_HANDOVER_TIMEOUT = "mobilityManagerHandoverTimeout";
-    private static final int DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT = 5000;
+    private static final int DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT = 10000;
 
     @Property(name = MOBILITY_MANAGER_HANDOVER_TIMEOUT, longValue = DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT,
             label = "Handover transaction timeout in milliseconds")
@@ -123,7 +123,6 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public void clientAssociated(SdwnClient c) {
-            log.info("client {} associated withs [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(c.ap())) {
                     log.info("Handover finished. {} is now associated with [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());

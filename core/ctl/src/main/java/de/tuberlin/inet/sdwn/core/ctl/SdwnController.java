@@ -840,7 +840,9 @@ public class SdwnController implements SdwnCoreService {
                     }
 
                     if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
+                        log.info("{}ing {} request by {} at [{}]:{}", lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY) ? "Deny" : "Grant",
+                                msg.getIeee80211Type(), msg.getAddr(), dpid, ap.name());
+                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY));
                     }
 
                     break;
@@ -877,7 +879,6 @@ public class SdwnController implements SdwnCoreService {
             log.info("New Client at AP {} on {}: {}", ap.name(), dpid, client);
 
             store.addClient(client, ap);
-            log.info("Calling {} clientListeners", clientListeners.size());
             clientListeners.forEach(l -> l.clientAssociated(client));
             // FIXME! hostapd on the agent does not have HT/VHT capabilities at this time
             //       send get client request to fetch capabilities/(V)HT capabilities. Needs new SdwnTransactionContext
