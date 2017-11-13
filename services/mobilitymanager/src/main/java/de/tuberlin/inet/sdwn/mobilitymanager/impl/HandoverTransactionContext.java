@@ -3,6 +3,7 @@ package de.tuberlin.inet.sdwn.mobilitymanager.impl;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
+import de.tuberlin.inet.sdwn.mobilitymanager.SdwnMobilityManager;
 import org.onosproject.openflow.controller.Dpid;
 import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -26,12 +27,14 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     private State state;
 
+    private final SdwnMobilityManager mgr;
     private final SdwnAccessPoint dst;
     private final SdwnClient client;
 
-    public HandoverTransactionContext(SdwnAccessPoint ap, SdwnClient client) {
+    public HandoverTransactionContext(SdwnAccessPoint ap, SdwnClient client, SdwnMobilityManager mgr) {
         this.client = client;
         this.dst = ap;
+        this.mgr = mgr;
     }
 
     public SdwnAccessPoint dst() {
@@ -67,7 +70,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
             case STATE_DEL_CLIENT:
                 if (((OFSdwnDelClient) msg).getClient().equals(MacAddress.of(client.macAddress().toBytes()))) {
                     state = State.STATE_ADD_CLIENT;
-                    log.info("Handover update! {} disassociated from [{}]:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
+                    log.info("Handover update: {} disassociated from [{}]:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
                     client.disassoc();
                 }
                 break;
@@ -75,7 +78,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
                 OFSdwnAddClient addClientMsg = (OFSdwnAddClient) msg;
                 if (addClientMsg.getClient().equals(MacAddress.of(client.macAddress().toBytes())) &&
                         addClientMsg.getAp().getPortNumber() == dst.portNumber()) {
-                    log.info("Handover finished! {} is now associated with [{}]:{}", client.macAddress(), dst.nic().switchID(), dst.name());
+                    log.info("Handover finished: {} is now associated with [{}]:{}", client.macAddress(), dst.nic().switchID(), dst.name());
                     client.assoc(dst);
                     return DONE;
                 }
@@ -87,6 +90,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void timeout() {
-        log.error("Handover failed! {} -> [{}]:{}", client.macAddress(), dst.nic().switchID(), dst.name());
+        log.error("Handover failed: {} -> [{}]:{}: timeout", client.macAddress(), dst.nic().switchID(), dst.name());
+        mgr.abortHandover(client);
     }
 }

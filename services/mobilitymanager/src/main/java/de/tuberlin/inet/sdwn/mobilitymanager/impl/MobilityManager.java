@@ -107,11 +107,17 @@ public class MobilityManager implements SdwnMobilityManager {
 
         log.info("Starting handover: {}: [{}]:{} -> [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name(), dst.nic().switchID(), dst.name());
 
-        HandoverTransactionContext handover = new HandoverTransactionContext(dst, c);
+        HandoverTransactionContext handover = new HandoverTransactionContext(dst, c, this);
         controller.startTransaction(handover, timeout);
         ongoingHandovers.put(c.macAddress(), handover);
     }
 
+
+    @Override
+    public void abortHandover(SdwnClient c) {
+        checkNotNull(c);
+        ongoingHandovers.remove(c.macAddress());
+    }
 
     private final class InternalClientListener implements SdwnClientListener {
 
