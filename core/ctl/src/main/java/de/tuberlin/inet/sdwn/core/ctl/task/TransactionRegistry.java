@@ -14,14 +14,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.System.currentTimeMillis;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class TransactionRegistry {
 
     private final Logger log = getLogger(getClass());
 
-    private final Map<Long, TransactionContext> transactions = new HashMap<>();
+    private final Map<Long, InternalTransactionContext> transactions = new HashMap<>();
     private final Set<SdwnTransactionContext> allMsgHandlers = new HashSet<>();
 
     public boolean ongoing(long xid) {
@@ -41,7 +40,7 @@ public class TransactionRegistry {
                 return;
             }
 
-            transactions.put(t.xid(), new TransactionContext(t, timeout));
+            transactions.put(t.xid(), new InternalTransactionContext(t, timeout));
         }
     }
 
@@ -56,7 +55,7 @@ public class TransactionRegistry {
 
             allMsgHandlers.forEach(t -> t.update(dpid, ev));
 
-            TransactionContext ctx = transactions.get(ev.getXid());
+            InternalTransactionContext ctx = transactions.get(ev.getXid());
             if (ctx == null)
                 return false;
 
@@ -64,14 +63,18 @@ public class TransactionRegistry {
         }
     }
 
-    private class TransactionContext {
+    /**
+     * Wraps an instance of {@code SdwnTransactionContext} and adds a timeout. All Callbacks to the transaction
+     * are invoked through an instance of this class.
+     */
+    private class InternalTransactionContext {
 
         private SdwnTransactionContext task;
         private Timeout timeout;
         private long timeoutVal;
 
 
-        TransactionContext(SdwnTransactionContext t, long timeout) {
+        InternalTransactionContext(SdwnTransactionContext t, long timeout) {
             task = t;
             timeoutVal = timeout;
             this.timeout = Timer.getTimer().newTimeout(new TransactionTimeout(t), timeout, TimeUnit.MILLISECONDS);
@@ -101,8 +104,8 @@ public class TransactionRegistry {
 
         @Override
         public boolean equals(Object obj) {
-            return (obj instanceof TransactionContext) &&
-                    ((TransactionContext) obj).task == this;
+            return (obj instanceof InternalTransactionContext) &&
+                    ((InternalTransactionContext) obj).task == this;
         }
     }
 
@@ -117,6 +120,7 @@ public class TransactionRegistry {
 
         @Override
         public void run(Timeout timeout) throws Exception {
+            log.info("Task {} timed out...", task);
             synchronized (transactions) {
                 transactions.remove(task.xid());
                 task.timeout();
