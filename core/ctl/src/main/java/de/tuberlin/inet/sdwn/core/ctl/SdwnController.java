@@ -806,11 +806,6 @@ public class SdwnController implements SdwnCoreService {
                             lastPriority = e.priority;
                         }
                     }
-
-                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
-                    }
-
                     break;
                 case AUTH:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
@@ -822,11 +817,6 @@ public class SdwnController implements SdwnCoreService {
                             lastPriority = e.priority;
                         }
                     }
-
-                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
-                    }
-
                     break;
                 case PROBE:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
@@ -838,14 +828,13 @@ public class SdwnController implements SdwnCoreService {
                             lastPriority = e.priority;
                         }
                     }
-
-                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        log.info("{}ing {} request by {} at [{}]:{}", lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY) ? "Deny" : "Grant",
-                                msg.getIeee80211Type(), msg.getAddr(), dpid, ap.name());
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY));
-                    }
-
                     break;
+            }
+
+            if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
+                log.info("{}ing {} request by {} at [{}]:{}", lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY) ? "Deny" : "Grant",
+                        msg.getIeee80211Type(), msg.getAddr(), dpid, ap.name());
+                send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY));
             }
         }
 
