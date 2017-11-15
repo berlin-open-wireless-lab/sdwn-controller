@@ -163,13 +163,13 @@ public class MobilityManager implements SdwnMobilityManager {
     private final class InternalMgmtFrameListener extends Sdwn80211MgmtFrameListenerAdapter {
 
         @Override
-        public ResponseAction receivedAuthRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             log.info("Got AUTH request");
             if (ongoingHandovers.containsKey(clientMac)) {
                 log.info("Matched AUTH request");
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
-                if (ctx.client().ap().equals(atAP)) {
+                if (ctx.dst().equals(atAP)) {
                     return ResponseAction.GRANT;
                 } else {
                     return ResponseAction.DENY;
@@ -186,7 +186,7 @@ public class MobilityManager implements SdwnMobilityManager {
                 log.info("Matched ASSOC request");
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
-                if (ctx.client().ap().equals(atAP)) {
+                if (ctx.dst().equals(atAP)) {
                     return ResponseAction.GRANT;
                 } else {
                     return ResponseAction.DENY;
