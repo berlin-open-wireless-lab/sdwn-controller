@@ -89,6 +89,12 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
     }
 
     @Override
+    public void cancel() {
+        log.error("Handover failed: {} -> [{]}:{}: cancelled", client.macAddress(), dst.nic().switchID(), dst.name());
+        mgr.abortHandover(client);
+    }
+
+    @Override
     public void timeout() {
         log.error("Handover failed: {} -> [{}]:{}: timeout", client.macAddress(), dst.nic().switchID(), dst.name());
         mgr.abortHandover(client);

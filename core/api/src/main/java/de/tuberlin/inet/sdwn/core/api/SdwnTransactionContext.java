@@ -79,6 +79,12 @@ public interface SdwnTransactionContext {
     SdwnTransactionContext followupTask();
 
     /**
+     * Callback invoked by the {@code SdwnTransactionManager} after a transaction has been canceled for reasons
+     * other than timeout.
+     */
+    void cancel();
+
+    /**
      * Callback invoked by the {@code SdwnTransactionManager} after a transaction has timed out.
      */
     void timeout();

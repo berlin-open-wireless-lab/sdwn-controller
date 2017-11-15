@@ -46,7 +46,7 @@ public class TransactionRegistry {
 
     public void removeTransaction(SdwnTransactionContext t) {
         synchronized (transactions) {
-            transactions.remove(t.xid());
+            transactions.remove(t.xid()).timeout.cancel();
         }
     }
 

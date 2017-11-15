@@ -247,9 +247,7 @@ public class SdwnController implements SdwnCoreService {
 
     @Override
     public void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
-        log.info("Registering IEEE 802.11 Management frame listener {} with priority {}", listener, priority);
         mgmtFrameListeners.addListener(listener, priority);
-        log.info("Registered IEEE 802.11 Management frame listener {} with priority {}", listener, priority);
     }
 
     @Override
@@ -788,9 +786,6 @@ public class SdwnController implements SdwnCoreService {
         // TODO: use thread pool for message handling
         // TODO: client authenticator needs to handle AUTH and ASSOC frames
         private void handleMgmtFrame(Dpid dpid, OFSdwnIeee80211Mgmt msg) {
-
-            log.info("Handling IEEE 802.11 Management frame {}", msg);
-
             SdwnAccessPoint ap = ifNoToAp(dpid, msg.getIfNo().getPortNumber());
             if (ap == null) {
                 return;

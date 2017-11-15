@@ -36,6 +36,7 @@ public class DefaultSdwnTransactionManager implements SdwnTransactionManager {
     @Override
     public void cancelTransaction(SdwnTransactionContext t) {
         transactions.removeTransaction(t);
+        t.cancel();
     }
 
     @Override

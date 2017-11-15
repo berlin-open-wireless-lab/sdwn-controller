@@ -58,6 +58,10 @@ public abstract class DefaultSdwnTransactionContext implements SdwnTransactionCo
     }
 
     @Override
+    public void cancel() {
+    }
+
+    @Override
     public boolean hasFollowupTask() {
         return this.followupTask != null;
     }
