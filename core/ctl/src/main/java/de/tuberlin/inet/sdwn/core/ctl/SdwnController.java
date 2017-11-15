@@ -850,14 +850,7 @@ public class SdwnController implements SdwnCoreService {
         }
 
         private void handleAddClientNotification(Dpid dpid, OFSdwnAddClient msg) {
-            SdwnAccessPoint ap = null;
-            for (SdwnNic nic : store.nicsForSwitch(dpid)) {
-                if ((ap = nic.aps().stream()
-                        .filter(a -> a.portNumber() == msg.getAp().getPortNumber())
-                        .findFirst().orElse(null)) != null) {
-                    break;
-                }
-            }
+            SdwnAccessPoint ap = ifNoToAp(dpid, msg.getAp().getPortNumber());
 
             if (ap == null) {
                 log.error("No Access Point with number {} known on {}", msg.getAp().getPortNumber(), dpid);
