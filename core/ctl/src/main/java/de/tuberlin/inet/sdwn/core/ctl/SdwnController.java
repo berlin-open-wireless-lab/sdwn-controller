@@ -247,6 +247,7 @@ public class SdwnController implements SdwnCoreService {
 
     @Override
     public void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
+        log.info("Registering IEEE 802.11 Management frame listener {} with priority {}", listener, priority);
         mgmtFrameListeners.addListener(listener, priority);
         log.info("Registered IEEE 802.11 Management frame listener {} with priority {}", listener, priority);
     }
