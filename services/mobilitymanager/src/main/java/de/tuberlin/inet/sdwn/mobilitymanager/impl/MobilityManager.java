@@ -168,10 +168,8 @@ public class MobilityManager implements SdwnMobilityManager {
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.dst().equals(atAP)) {
-                    log.info("Granting AUTH request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.GRANT;
                 } else {
-                    log.info("Denying AUTH request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.DENY;
                 }
             }
@@ -185,10 +183,8 @@ public class MobilityManager implements SdwnMobilityManager {
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.dst().equals(atAP)) {
-                    log.info("Granting ASSOC request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.GRANT;
                 } else {
-                    log.info("Denying ASSOC request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.DENY;
                 }
             }
