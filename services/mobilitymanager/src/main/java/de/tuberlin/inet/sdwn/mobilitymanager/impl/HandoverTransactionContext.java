@@ -54,6 +54,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
                 .setXid(xid)
                 .setBanTime(10000)
                 .setReason(1)
+                .setDeauth((short) 1)
                 .setClient(org.projectfloodlight.openflow.types.MacAddress.of(client.macAddress().toBytes()))
                 .setAp(OFPort.of(client.ap().portNumber()))
                 .build());
