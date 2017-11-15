@@ -32,7 +32,7 @@ public class MobilityManager implements SdwnMobilityManager {
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     private SdwnCoreService controller;
 
-    private InternalMgmtFrameListener mgmtFrameListener = new InternalMgmtFrameListener();
+    private Sdwn80211MgmtFrameListener mgmtFrameListener = new InternalMgmtFrameListener();
 
     private static final String MOBILITY_MANAGER_80211_MGMT_PRIORITY = "mobilityManagerMgmtFramePrio";
     private static final int DEFAULT_MOBILITY_MANAGER_80211_MGMT_PRIORITY = 99;
@@ -48,8 +48,8 @@ public class MobilityManager implements SdwnMobilityManager {
             label = "Handover transaction timeout in milliseconds")
     private long mobilityManagerHandoverTimeout = DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT;
 
-    private InternalClientListener clientListener = new InternalClientListener();
-    private InternalSwitchListener switchListener = new InternalSwitchListener();
+    private SdwnClientListener clientListener = new InternalClientListener();
+    private SdwnSwitchListener switchListener = new InternalSwitchListener();
     private Map<MacAddress, HandoverTransactionContext> ongoingHandovers = new ConcurrentHashMap<>();
 
     @Activate
