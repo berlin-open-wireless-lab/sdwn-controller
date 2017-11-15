@@ -164,14 +164,14 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
-            log.info("Got AUTH request");
             if (ongoingHandovers.containsKey(clientMac)) {
-                log.info("Matched AUTH request");
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.dst().equals(atAP)) {
+                    log.info("Granting AUTH request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.GRANT;
                 } else {
+                    log.info("Denying AUTH request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.DENY;
                 }
             }
@@ -181,14 +181,14 @@ public class MobilityManager implements SdwnMobilityManager {
 
         @Override
         public ResponseAction receivedAssocRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
-            log.info("Got ASSOC request");
             if (ongoingHandovers.containsKey(clientMac)) {
-                log.info("Matched ASSOC request");
                 HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.dst().equals(atAP)) {
+                    log.info("Granting ASSOC request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.GRANT;
                 } else {
+                    log.info("Denying ASSOC request by {} at [{}]:{}", clientMac, atAP.nic().switchID(), atAP.name());
                     return ResponseAction.DENY;
                 }
             }
