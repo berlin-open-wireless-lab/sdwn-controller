@@ -865,8 +865,6 @@ public class SdwnController implements SdwnCoreService {
             }
 
             SdwnClient client = Client.fromAddClient(ap, msg);
-            log.info("New Client at AP {} on {}: {}", ap.name(), dpid, client);
-
             store.addClient(client, ap);
             clientListeners.forEach(l -> l.clientAssociated(client));
             // FIXME! hostapd on the agent does not have HT/VHT capabilities at this time
