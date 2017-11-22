@@ -1,5 +1,6 @@
 package de.tuberlin.inet.sdwn.mobilitymanager.impl;
 
+import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
@@ -11,6 +12,9 @@ import org.projectfloodlight.openflow.protocol.OFSdwnAddClient;
 import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
 import org.projectfloodlight.openflow.types.MacAddress;
 import org.projectfloodlight.openflow.types.OFPort;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.CONTINUE;
@@ -30,6 +34,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
     private final SdwnMobilityManager mgr;
     private final SdwnAccessPoint dst;
     private final SdwnClient client;
+    private List<SdwnAccessPoint> blacklistedAt = new ArrayList<>();
 
     public HandoverTransactionContext(SdwnAccessPoint ap, SdwnClient client, SdwnMobilityManager mgr) {
         this.client = client;
@@ -47,9 +52,20 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
 
     @Override
     public void start() {
-        OpenFlowWirelessSwitch sw = manager.controller().getSwitch(client.ap().nic().switchID());
+        SdwnCoreService controller = manager.controller();
+        OpenFlowWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
         checkNotNull(sw);
 
+        // TODO:
+        // blacklist the client at
+        // a) all APs if the no hearing map service is available
+        // b) all APs that have recently overheard the client if the hearingmap is available
+        controller.aps().forEach(ap -> {
+            controller.blacklistClientAtAp(ap, client.macAddress(), 10000);
+            blacklistedAt.add(ap);
+        });
+
+        // start the handover by dis-associating the client at its current AP
         sw.sendMsg(sw.factory().buildSdwnDelClient()
                 .setXid(xid)
                 .setBanTime(10000)
@@ -93,6 +109,7 @@ public class HandoverTransactionContext extends DefaultSdwnTransactionContext {
     public void cancel() {
         log.error("Handover failed: {} -> [{]}:{}: cancelled", client.macAddress(), dst.nic().switchID(), dst.name());
         mgr.abortHandover(client);
+        blacklistedAt.forEach(ap -> manager.controller().clearClientBlacklistingAtAp(ap, client.macAddress()));
     }
 
     @Override

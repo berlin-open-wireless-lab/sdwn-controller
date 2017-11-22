@@ -318,6 +318,39 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
+    public void blacklistClientAtAp(SdwnAccessPoint ap, MacAddress mac, long banTime) {
+        checkNotNull(ap);
+        checkNotNull(mac);
+        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        checkNotNull(sw);
+
+        sw.sendMsg(sw.factory().buildSdwnBlacklistClient()
+                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(mac.toBytes()))
+                .setBanTime(banTime < 0 ? 0 : banTime > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) banTime)
+                .setIfNo(OFPort.of(ap.portNumber()))
+                .build()
+        );
+
+        ap.blacklistClient(mac);
+    }
+
+    @Override
+    public void clearClientBlacklistingAtAp(SdwnAccessPoint ap, MacAddress mac) {
+        checkNotNull(ap);
+        checkNotNull(mac);
+        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        checkNotNull(sw);
+
+        sw.sendMsg(sw.factory().buildSdwnBlacklistClient()
+                .setIfNo(OFPort.of(ap.portNumber()))
+                .setBanTime(0)
+                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(mac.toBytes()))
+                .build());
+
+        ap.clearClientBlacklisting(mac);
+    }
+
+    @Override
     public boolean removeClientFromAp(MacAddress clientMac, long banTime) {
         SdwnClient client = store.getClient(clientMac);
         if (client == null) {

@@ -29,17 +29,18 @@ public class AccessPoint implements SdwnAccessPoint {
     private final SdwnNic nic;
     private SdwnFrequency freq;
     private Set<SdwnClient> clients = new HashSet<>();
+    private Set<MacAddress> blacklist = new HashSet<>();
 
     private AccessPoint(int no, String name, MacAddress bssid,
                         String ssid, SdwnNic nic,
-                        SdwnFrequency freq, List<Client> stas) {
+                        SdwnFrequency freq, List<Client> clients) {
         portNumber = no;
         this.bssid = bssid;
         this.name = name;
         this.ssid = ssid;
         this.nic = nic;
         this.freq = freq;
-        clients.addAll(stas);
+        this.clients.addAll(clients);
     }
 
     public static AccessPoint fromOF(SdwnNic nic, OFSdwnEntityAccesspoint entity) throws SdwnEntityParsingException {
@@ -128,6 +129,24 @@ public class AccessPoint implements SdwnAccessPoint {
                 .collect(Collectors.toList()).contains(clientMac);
     }
 
+    @Override
+    public void blacklistClient(MacAddress mac) {
+        checkNotNull(mac);
+        if (!blacklist.contains(mac)) {
+            blacklist.add(mac);
+        }
+    }
+
+    @Override
+    public void clearClientBlacklisting(MacAddress mac) {
+        checkNotNull(mac);
+        blacklist.remove(mac);
+    }
+
+    @Override
+    public boolean clientIsBlacklisted(MacAddress mac) {
+        return blacklist.contains(mac);
+    }
 
     @Override
     public String toString() {

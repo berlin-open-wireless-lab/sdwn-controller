@@ -71,6 +71,20 @@ public interface SdwnCoreService {
     boolean addClientToAp(SdwnAccessPoint dstAp, SdwnClient client);
 
     /**
+     * Ban a client from associating with an AP for a given time.
+     *
+     * @param ap the AP from which the client is to be banned
+     * @param mac the client's MAC address
+     * @param banTime the ban time in ms
+     */
+    void blacklistClientAtAp(SdwnAccessPoint ap, MacAddress mac, long banTime);
+
+    /**
+     * Lift a client's ban at an AP.
+     */
+    void clearClientBlacklistingAtAp(SdwnAccessPoint ap, MacAddress mac);
+
+    /**
      * Send a Delete Client message to the switch hosting the client's AP.
      *
      * @param mac the client's MAC address
