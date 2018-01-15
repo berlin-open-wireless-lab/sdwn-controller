@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class TransactionManager {
@@ -30,6 +31,8 @@ public class TransactionManager {
     }
 
     long startTransaction(SdwnTransaction t) {
+        checkNotNull(t);
+
         TransactionContext ctx = new TransactionContext(t);
         transactions.put(ctx.xid, ctx);
         ctx.transaction.start(ctx.xid);
@@ -41,6 +44,8 @@ public class TransactionManager {
     }
 
     long startTransactionChain(SdwnTransactionChain chain) {
+        checkNotNull(chain);
+
         TransactionContext ctx = new TransactionContext(chain.next());
         transactions.put(ctx.xid, ctx);
         ctx.transaction.start(ctx.xid);
@@ -115,12 +120,12 @@ public class TransactionManager {
             this.chain = chain;
         }
 
-        TransactionContext(SdwnTransaction t) {
-            this(t, xidGen.nextXid(), null);
-        }
-
         TransactionContext(SdwnTransaction t, long xid) {
             this(t, xid, null);
+        }
+
+        TransactionContext(SdwnTransaction t) {
+            this(t, xidGen.nextXid(), null);
         }
 
         @Override
