@@ -3,7 +3,9 @@ package de.tuberlin.inet.sdwn.core.ctl;
 import com.google.common.base.MoreObjects;
 import de.tuberlin.inet.sdwn.core.api.SdwnTransaction;
 import de.tuberlin.inet.sdwn.core.api.SdwnTransactionChain;
+import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
+import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -31,7 +33,7 @@ public class TransactionManager {
         TransactionContext ctx = new TransactionContext(t);
         transactions.put(ctx.xid, ctx);
         ctx.transaction.start(ctx.xid);
-        ctx.timeout.timer().newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
+        ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
 
         log.info("Started transaction {}", ctx);
 
@@ -42,7 +44,7 @@ public class TransactionManager {
         TransactionContext ctx = new TransactionContext(chain.next());
         transactions.put(ctx.xid, ctx);
         ctx.transaction.start(ctx.xid);
-        ctx.timeout.timer().newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
+        ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
 
         log.info("Started transaction {} as part of a transaction chain", ctx);
 
@@ -55,10 +57,10 @@ public class TransactionManager {
             switch (ctx.transaction.update(dpid, msg)) {
                 case SKIP: /* fall through */
                 case CONTINUE:
-                    ctx.timeout.timer().newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
+                    ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
                     break;
                 case NEXT:
-                    ctx.timeout.timer().stop();
+                    ctx.timer.stop();
                     if (ctx.chain == null || ctx.chain.next() == null) {
                         log.warn("Transaction returned NEXT although not part of a chain");
                         transactions.remove(ctx.xid);
@@ -68,13 +70,13 @@ public class TransactionManager {
                     TransactionContext nextCtx = new TransactionContext(ctx.chain.next(), ctx.xid, ctx.chain);
                     transactions.replace(nextCtx.xid, nextCtx);
                     nextCtx.transaction.start(nextCtx.xid);
-                    nextCtx.timeout.timer().newTimeout(new TransactionTimeoutTask(nextCtx), nextCtx.transaction.timeout(), TimeUnit.MILLISECONDS);
+                    nextCtx.timer.newTimeout(new TransactionTimeoutTask(nextCtx), nextCtx.transaction.timeout(), TimeUnit.MILLISECONDS);
 
                     log.info("Started next transaction in transaction chain: {}", nextCtx);
 
                     break;
                 case DONE:
-                    ctx.timeout.timer().stop();
+                    ctx.timer.stop();
                     transactions.remove(ctx.xid);
                     ctx.transaction.done();
                     break;
@@ -92,7 +94,7 @@ public class TransactionManager {
         }
 
         TransactionContext ctx = transactions.remove(xid);
-        ctx.timeout.cancel();
+        ctx.timer.stop();
 
         log.info("Aborted transaction {}", ctx);
         ctx.transaction.aborted();
@@ -103,7 +105,7 @@ public class TransactionManager {
      */
     private class TransactionContext {
         final SdwnTransaction transaction;
-        Timeout timeout;
+        Timer timer = new HashedWheelTimer();
         final long xid;
         final SdwnTransactionChain chain;
 
