@@ -10,22 +10,6 @@ import org.projectfloodlight.openflow.protocol.OFMessage;
  */
 public interface SdwnTransaction {
 
-    /**
-     * Callback status code returned by the {@code update} method after a message has
-     * been processed.
-     * - DONE means that the transaction has finished
-     * - NEXT means that the transaction has finished and the next transaction in the transaction chain (if any) should be started
-     * - CONTINUE means that the callback has processed the message but the transaction has not yet finished
-     * - ABORT means that the transaction has finished unsuccessfully. If it is part of a transaction chain, the next transaction in the chain will not be started.
-     * - SKIP means that the callback has not processed the message
-     */
-    enum TransactionStatus {
-        DONE,
-        NEXT,
-        CONTINUE,
-        SKIP,
-    }
-
     long timeout();
 
     /**
@@ -35,7 +19,7 @@ public interface SdwnTransaction {
      * @param msg the message received
      * @return the appropriate {@code TransactionStatus}
      */
-    TransactionStatus update(Dpid dpid, OFMessage msg);
+    SdwnTransactionStatus update(Dpid dpid, OFMessage msg);
 
     /**
      * Called once when the transaction is started.
