@@ -515,6 +515,7 @@ public class SdwnController implements SdwnCoreService {
             for (SdwnNic nic : nics) {
                 nic.aps().forEach(ap -> {
                     store.putAp(ap, nic);
+                    log.info("Starting GetClientsQuery for [{}]:{}", nic.switchID(), ap.name());
                     transactionManager.startTransaction(new GetClientsQuery(ap, dpid, sdwnController, 5000));
                 });
             }
