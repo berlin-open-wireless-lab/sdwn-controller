@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import de.tuberlin.inet.sdwn.core.api.*;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
+import de.tuberlin.inet.sdwn.core.api.entity.SdwnTransactionChain;
 import de.tuberlin.inet.sdwn.mobilitymanager.SdwnMobilityManager;
 import org.apache.felix.scr.annotations.*;
 import org.onlab.packet.MacAddress;
@@ -50,7 +51,7 @@ public class MobilityManager implements SdwnMobilityManager {
 
     private SdwnClientListener clientListener = new InternalClientListener();
     private SdwnSwitchListener switchListener = new InternalSwitchListener();
-    private Map<MacAddress, HandoverTransactionContext> ongoingHandovers = new ConcurrentHashMap<>();
+    private Map<MacAddress, HandoverTransactionAddClient> ongoingHandovers = new ConcurrentHashMap<>();
 
     @Activate
     public void activate() {
@@ -107,9 +108,14 @@ public class MobilityManager implements SdwnMobilityManager {
 
         log.info("Starting handover: {}: [{}]:{} -> [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name(), dst.nic().switchID(), dst.name());
 
-        HandoverTransactionContext handover = new HandoverTransactionContext(dst, c, this);
-        controller.startTransaction(handover, timeout);
-        ongoingHandovers.put(c.macAddress(), handover);
+        HandoverTransactionDelClient delClientTransaction = new HandoverTransactionDelClient(c, this, controller, timeout);
+        HandoverTransactionAddClient addClientTransaction = new HandoverTransactionAddClient(dst, c, this, controller, timeout);
+
+        SdwnTransactionChain transactionChain = new SdwnTransactionChain(delClientTransaction)
+                .append(addClientTransaction);
+
+        controller.startTransactionChain(transactionChain);
+        ongoingHandovers.put(c.macAddress(), addClientTransaction);
     }
 
 
@@ -165,7 +171,7 @@ public class MobilityManager implements SdwnMobilityManager {
         @Override
         public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             if (ongoingHandovers.containsKey(clientMac)) {
-                HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
+                HandoverTransactionAddClient ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.dst().equals(atAP)) {
                     return ResponseAction.GRANT;
@@ -180,7 +186,7 @@ public class MobilityManager implements SdwnMobilityManager {
         @Override
         public ResponseAction receivedAssocRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             if (ongoingHandovers.containsKey(clientMac)) {
-                HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
+                HandoverTransactionAddClient ctx = ongoingHandovers.get(clientMac);
 
                 if (ctx.dst().equals(atAP)) {
                     return ResponseAction.GRANT;

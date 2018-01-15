@@ -19,17 +19,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import de.tuberlin.inet.sdwn.core.api.*;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequency;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequencyBand;
+import de.tuberlin.inet.sdwn.core.api.entity.*;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
 import de.tuberlin.inet.sdwn.core.ctl.entity.ClientCryptoKeys;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Nic;
-import de.tuberlin.inet.sdwn.core.ctl.task.AddClientContext;
-import de.tuberlin.inet.sdwn.core.ctl.task.DelClientContext;
+import de.tuberlin.inet.sdwn.core.ctl.task.AddClientTransaction;
+import de.tuberlin.inet.sdwn.core.ctl.task.DelClientTransaction;
 import de.tuberlin.inet.sdwn.core.ctl.task.GetClientsQuery;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -123,7 +119,7 @@ public class SdwnController implements SdwnCoreService {
 
     private ApplicationId appId;
 
-    private InternalSwitchListener switchListener = new InternalSwitchListener();
+    private InternalSwitchListener switchListener = new InternalSwitchListener(this);
     private InternalSdwnMessageListener msgListener = new InternalSdwnMessageListener();
     private InternalHostProvider hostProvider = new InternalHostProvider();
 
@@ -135,7 +131,7 @@ public class SdwnController implements SdwnCoreService {
     private long transactionTimeout = DEFAULT_TRANSACTION_TIMEOUT;
 
     private XidGenerator xidGen = XidGenerators.create();
-    protected SdwnTransactionManager transactionManager = new DefaultSdwnTransactionManager(this);
+    private TransactionManager transactionManager = new TransactionManager(xidGen);
 
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
     protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
@@ -364,7 +360,7 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        transactionManager.startTransaction(new DelClientContext(xid, client, client.ap(), banTime), 5000);
+        transactionManager.startTransaction(new DelClientTransaction(client, client.ap(), banTime, this, 5000));
         return true;
     }
 
@@ -423,20 +419,18 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public long startTransaction(SdwnTransactionContext t, long timeout) {
-        long xid;
+    public long startTransaction(SdwnTransaction t) {
+        return transactionManager.startTransaction(t);
+    }
 
-        if (t.xid() == SdwnTransactionContext.NO_XID) {
-            xid = xidGen.nextXid();
-            t.setXid(xid);
-        } else {
-            xid = t.xid();
-        }
+    @Override
+    public long startTransactionChain(SdwnTransactionChain c) {
+        return transactionManager.startTransactionChain(c);
+    }
 
-        log.info("Starting transaction {} (xid {})", t, xid);
-
-        transactionManager.startTransaction(t, timeout);
-        return xid;
+    @Override
+    public void abortTransaction(long xid) {
+        transactionManager.abortTransaction(xid);
     }
 
     private void send80211MgmtReply(MacAddress client, SdwnAccessPoint ap, long xid, boolean denied) {
@@ -491,6 +485,12 @@ public class SdwnController implements SdwnCoreService {
 
     private class InternalSwitchListener implements OpenFlowSwitchListener {
 
+        SdwnCoreService sdwnController;
+
+        InternalSwitchListener(SdwnCoreService controller) {
+            sdwnController = controller;
+        }
+
         @Override
         public void switchAdded(Dpid dpid) {
             OpenFlowSwitch ofsw = controller.getSwitch(dpid);
@@ -508,7 +508,7 @@ public class SdwnController implements SdwnCoreService {
                     .map(nicEntity -> Nic.fromOF(dpid, nicEntity, sw.sdwnEntities()))
                     .collect(Collectors.toList());
 
-            log.info("NICS: {}", sw.nicEntities());
+            log.info("NICs: {}", sw.nicEntities());
 
             store.putNics(nics);
 
@@ -518,7 +518,7 @@ public class SdwnController implements SdwnCoreService {
                     store.putAp(ap, nic);
                     OFSdwnGetClientsRequest msg = buildGetClientsMessage(sw, ap);
                     getClientsMsgs.add(msg);
-                    transactionManager.startTransaction(new GetClientsQuery(msg.getXid(), ap.name(), dpid), 5000);
+                    transactionManager.startTransaction(new GetClientsQuery(ap.name(), dpid, sdwnController, 5000));
                 });
             }
 
@@ -651,7 +651,7 @@ public class SdwnController implements SdwnCoreService {
             cmdBuilder.setKeys(ClientCryptoKeys.toOF(client.keys(), sw.factory()));
         }
 
-        transactionManager.startTransaction(new AddClientContext(xidGen.nextXid(), client, ap), 3000);
+        transactionManager.startTransaction(new AddClientTransaction(client, ap, 3000));
         log.info("Sending {}", cmdBuilder.build());
         sw.sendMsg(cmdBuilder.build());
         return true;

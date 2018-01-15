@@ -1,6 +1,7 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
-import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
+import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
@@ -11,24 +12,33 @@ import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.SKIP;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.SKIP;
 
-public class DelClientContext extends DefaultSdwnTransactionContext {
+public class DelClientTransaction extends SdwnTransactionAdapter {
 
     private final SdwnClient client;
     private final SdwnAccessPoint ap;
     private final long banTime;
+    private final SdwnCoreService controller;
+    private final long timeout;
 
-    public DelClientContext(long xid, SdwnClient client, SdwnAccessPoint ap, long banTime) {
-        super(xid);
+    public DelClientTransaction(SdwnClient client, SdwnAccessPoint ap, long banTime, SdwnCoreService controller, long timeout) {
         this.client = client;
         this.ap = ap;
         this.banTime = banTime;
+        this.controller = controller;
+        this.timeout = timeout;
     }
 
     @Override
-    public void start() {
-        OpenFlowWirelessSwitch sw = manager.controller().getSwitch(client.ap().nic().switchID());
+    public long timeout() {
+        return timeout;
+    }
+
+
+    @Override
+    public void start(long xid) {
+        OpenFlowWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
         checkNotNull(sw);
 
         sw.sendMsg(sw.factory().buildSdwnDelClient()
@@ -52,7 +62,7 @@ public class DelClientContext extends DefaultSdwnTransactionContext {
         if (delClientMsg.getAp().getPortNumber() == ap.portNumber() &&
                 client.macAddress().equals(MacAddress.valueOf(delClientMsg.getClient().getBytes()))) {
 
-            manager.controller().removeClient(client);
+            controller.removeClient(client);
         }
 
         return null;

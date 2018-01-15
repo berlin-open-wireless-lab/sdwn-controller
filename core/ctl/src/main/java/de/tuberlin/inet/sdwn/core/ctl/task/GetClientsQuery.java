@@ -1,60 +1,56 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
-import de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext;
+import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransaction;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
-import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsReply;
 import org.projectfloodlight.openflow.protocol.OFStatsReplyFlags;
 
-public class GetClientsQuery extends DefaultSdwnTransactionContext {
+public class GetClientsQuery extends SdwnTransactionAdapter {
 
     private final Dpid dpid;
     private final String ap;
+    private SdwnCoreService controller;
+    private final long timeout;
 
-    public GetClientsQuery(long xid, String ap, Dpid dpid) {
-        super(xid);
+    public GetClientsQuery(String ap, Dpid dpid, SdwnCoreService controller, long timeout) {
         this.ap = ap;
         this.dpid = dpid;
+        this.controller = controller;
+        this.timeout = timeout;
     }
 
-    public GetClientsQuery(long xid, String ap, Dpid dpid,
-                           SdwnTransactionContext followUpTask) {
-        super(xid, followUpTask);
-        this.ap = ap;
-        this.dpid = dpid;
+    @Override
+    public long timeout() {
+        return timeout;
     }
 
     @Override
     public TransactionStatus update(Dpid dpid, OFMessage msg) {
 
         if (!(msg instanceof OFSdwnGetClientsReply)) {
-            return SdwnTransactionContext.TransactionStatus.SKIP;
+            return SdwnTransaction.TransactionStatus.SKIP;
         }
 
         OFSdwnGetClientsReply reply = (OFSdwnGetClientsReply) msg;
 
-        SdwnAccessPoint ap = manager.controller().apByDpidAndName(dpid, this.ap);
+        SdwnAccessPoint ap = controller.apByDpidAndName(dpid, this.ap);
         if (ap == null) {
-            return SdwnTransactionContext.TransactionStatus.DONE;
+            return SdwnTransaction.TransactionStatus.DONE;
         }
 
         SdwnClient newClient = Client.fromGetClientsReply(ap, reply);
         if (newClient == null) {
-            return SdwnTransactionContext.TransactionStatus.DONE;
+            return SdwnTransaction.TransactionStatus.DONE;
         }
 
-        manager.controller().newClient(ap, newClient);
+        controller.newClient(ap, newClient);
         boolean done = !reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE);
-        return done ? SdwnTransactionContext.TransactionStatus.DONE : SdwnTransactionContext.TransactionStatus.CONTINUE;
-    }
-
-    @Override
-    public void timeout() {
-        log.info("Get Stations Query for AP {} on {} timed out. This could just mean that the AP does not have any associated clients. There is no explicit signalling for that case, yet.",
-                ap, dpid);
+        return done ? SdwnTransaction.TransactionStatus.DONE : SdwnTransaction.TransactionStatus.CONTINUE;
     }
 }
