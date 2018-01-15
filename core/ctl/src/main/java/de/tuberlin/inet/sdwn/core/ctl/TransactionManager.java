@@ -76,6 +76,7 @@ public class TransactionManager {
                 case DONE:
                     ctx.timeout.timer().stop();
                     transactions.remove(ctx.xid);
+                    ctx.transaction.done();
                     break;
             }
         }

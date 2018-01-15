@@ -29,7 +29,7 @@ public interface SdwnTransaction {
     long timeout();
 
     /**
-     * Callback to be called regularly whenever a message belonging to the transaction has been received.
+     * Callback called whenever a message belonging to the transaction has been received.
      *
      * @param dpid the Datapath ID of the switch that sent the message
      * @param msg the message received

@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.NEXT;
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.SKIP;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class HandoverTransactionDelClient extends SdwnTransactionAdapter {
