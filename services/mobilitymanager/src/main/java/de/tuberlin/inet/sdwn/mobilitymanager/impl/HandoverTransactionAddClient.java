@@ -1,6 +1,7 @@
 package de.tuberlin.inet.sdwn.mobilitymanager.impl;
 
 import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
@@ -17,7 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.*;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
 import static org.slf4j.LoggerFactory.getLogger;
 
 
@@ -79,7 +81,7 @@ public class HandoverTransactionAddClient extends SdwnTransactionAdapter {
     }
 
     @Override
-    public TransactionStatus update(Dpid dpid, OFMessage msg) {
+    public SdwnTransactionStatus update(Dpid dpid, OFMessage msg) {
         if (!(msg instanceof OFSdwnAddClient) || !((OFSdwnAddClient) msg).getClient().equals(MacAddress.of(client.macAddress().toBytes()))) {
             return SKIP;
         }
