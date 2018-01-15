@@ -1,7 +1,7 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
 import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
-import de.tuberlin.inet.sdwn.core.api.SdwnTransaction;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
@@ -10,6 +10,10 @@ import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsReply;
 import org.projectfloodlight.openflow.protocol.OFStatsReplyFlags;
+
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.CONTINUE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
 
 public class GetClientsQuery extends SdwnTransactionAdapter {
 
@@ -31,26 +35,26 @@ public class GetClientsQuery extends SdwnTransactionAdapter {
     }
 
     @Override
-    public TransactionStatus update(Dpid dpid, OFMessage msg) {
+    public SdwnTransactionStatus update(Dpid dpid, OFMessage msg) {
 
         if (!(msg instanceof OFSdwnGetClientsReply)) {
-            return SdwnTransaction.TransactionStatus.SKIP;
+            return SKIP;
         }
 
         OFSdwnGetClientsReply reply = (OFSdwnGetClientsReply) msg;
 
         SdwnAccessPoint ap = controller.apByDpidAndName(dpid, this.ap);
         if (ap == null) {
-            return SdwnTransaction.TransactionStatus.DONE;
+            return DONE;
         }
 
         SdwnClient newClient = Client.fromGetClientsReply(ap, reply);
         if (newClient == null) {
-            return SdwnTransaction.TransactionStatus.DONE;
+            return DONE;
         }
 
         controller.newClient(ap, newClient);
         boolean done = !reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE);
-        return done ? SdwnTransaction.TransactionStatus.DONE : SdwnTransaction.TransactionStatus.CONTINUE;
+        return done ? DONE : CONTINUE;
     }
 }

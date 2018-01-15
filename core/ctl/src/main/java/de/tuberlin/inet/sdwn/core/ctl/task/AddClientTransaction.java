@@ -1,6 +1,7 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
 import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
@@ -8,8 +9,8 @@ import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnAddClient;
 
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.DONE;
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransaction.TransactionStatus.SKIP;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
 
 public class AddClientTransaction extends SdwnTransactionAdapter {
 
@@ -30,7 +31,7 @@ public class AddClientTransaction extends SdwnTransactionAdapter {
 
 
     @Override
-    public TransactionStatus update(Dpid dpid, OFMessage msg) {
+    public SdwnTransactionStatus update(Dpid dpid, OFMessage msg) {
         if (!(msg instanceof OFSdwnAddClient)) {
             return SKIP;
         }
