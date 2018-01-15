@@ -1,6 +1,4 @@
-package de.tuberlin.inet.sdwn.core.api.entity;
-
-import de.tuberlin.inet.sdwn.core.api.SdwnTransaction;
+package de.tuberlin.inet.sdwn.core.api;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -3,7 +3,6 @@ package de.tuberlin.inet.sdwn.core.api;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnTransactionChain;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
 import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;

@@ -2,7 +2,7 @@ package de.tuberlin.inet.sdwn.core.ctl;
 
 import com.google.common.base.MoreObjects;
 import de.tuberlin.inet.sdwn.core.api.SdwnTransaction;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnTransactionChain;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionChain;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import org.onosproject.openflow.controller.Dpid;
