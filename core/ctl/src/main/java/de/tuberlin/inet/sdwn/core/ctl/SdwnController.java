@@ -512,18 +512,12 @@ public class SdwnController implements SdwnCoreService {
 
             store.putNics(nics);
 
-            List<OFMessage> getClientsMsgs = new LinkedList<>();
             for (SdwnNic nic : nics) {
                 nic.aps().forEach(ap -> {
                     store.putAp(ap, nic);
-                    OFSdwnGetClientsRequest msg = buildGetClientsMessage(sw, ap);
-                    getClientsMsgs.add(msg);
-                    transactionManager.startTransaction(new GetClientsQuery(ap.name(), dpid, sdwnController, 5000));
+                    transactionManager.startTransaction(new GetClientsQuery(ap, dpid, sdwnController, 5000));
                 });
             }
-
-            log.info("Sending {}", getClientsMsgs);
-            sw.sendMsg(getClientsMsgs);
 
             // notify switch listeners
             switchListeners.forEach(listener -> listener.switchConnected(dpid));

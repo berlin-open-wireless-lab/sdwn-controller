@@ -9,7 +9,9 @@ import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsReply;
+import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsRequest;
 import org.projectfloodlight.openflow.protocol.OFStatsReplyFlags;
+import org.projectfloodlight.openflow.types.OFPort;
 
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.CONTINUE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
@@ -18,11 +20,11 @@ import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
 public class GetClientsQuery extends SdwnTransactionAdapter {
 
     private final Dpid dpid;
-    private final String ap;
+    private final SdwnAccessPoint ap;
     private SdwnCoreService controller;
     private final long timeout;
 
-    public GetClientsQuery(String ap, Dpid dpid, SdwnCoreService controller, long timeout) {
+    public GetClientsQuery(SdwnAccessPoint ap, Dpid dpid, SdwnCoreService controller, long timeout) {
         this.ap = ap;
         this.dpid = dpid;
         this.controller = controller;
@@ -35,6 +37,16 @@ public class GetClientsQuery extends SdwnTransactionAdapter {
     }
 
     @Override
+    public void start(long xid) {
+        OFSdwnGetClientsRequest getClientsMsg = controller.getSwitch(dpid).factory().buildSdwnGetClientsRequest()
+                .setXid(xid)
+                .setIfNo(OFPort.of(ap.portNumber()))
+                .build();
+
+        controller.sendMessage(dpid, getClientsMsg);
+    }
+
+    @Override
     public SdwnTransactionStatus update(Dpid dpid, OFMessage msg) {
 
         if (!(msg instanceof OFSdwnGetClientsReply)) {
@@ -42,12 +54,6 @@ public class GetClientsQuery extends SdwnTransactionAdapter {
         }
 
         OFSdwnGetClientsReply reply = (OFSdwnGetClientsReply) msg;
-
-        SdwnAccessPoint ap = controller.apByDpidAndName(dpid, this.ap);
-        if (ap == null) {
-            return DONE;
-        }
-
         SdwnClient newClient = Client.fromGetClientsReply(ap, reply);
         if (newClient == null) {
             return DONE;
