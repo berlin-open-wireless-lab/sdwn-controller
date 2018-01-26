@@ -515,20 +515,15 @@ public class SdwnController implements SdwnCoreService {
             for (SdwnNic nic : nics) {
                 nic.aps().forEach(ap -> {
                     store.putAp(ap, nic);
-                    log.info("Starting GetClientsQuery for [{}]:{}", nic.switchID(), ap.name());
-                    transactionManager.startTransaction(new GetClientsQuery(ap, dpid, sdwnController, 5000));
+                    SdwnTransaction getClientsQuery = new GetClientsQuery(ap, dpid, sdwnController, 5000);
+                    log.info("Starting GetClientsQuery for [{}]:{}: {}", dpid, ap.name(), getClientsQuery);
+                    transactionManager.startTransaction(getClientsQuery);
+                    
                 });
             }
 
             // notify switch listeners
             switchListeners.forEach(listener -> listener.switchConnected(dpid));
-        }
-
-        private OFSdwnGetClientsRequest buildGetClientsMessage(OpenFlowWirelessSwitch sw, SdwnAccessPoint ap) {
-            return sw.factory().buildSdwnGetClientsRequest()
-                    .setIfNo(OFPort.of(ap.portNumber()))
-                    .setXid(xidGen.nextXid())
-                    .build();
         }
 
         @Override
