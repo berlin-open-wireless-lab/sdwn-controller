@@ -31,7 +31,7 @@ public class TransactionManager {
     }
 
     long startTransaction(SdwnTransaction t) {
-        checkNotNull(t);
+//        checkNotNull(t);
         log.info("Starting transaction {}", t);
 
         TransactionContext ctx = new TransactionContext(t);
