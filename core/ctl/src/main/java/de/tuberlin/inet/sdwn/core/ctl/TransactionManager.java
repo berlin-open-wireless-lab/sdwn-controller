@@ -154,7 +154,6 @@ public class TransactionManager {
 
         @Override
         public void run(Timeout timeout) throws Exception {
-            log.info("Transaction {} has timed out...", context);
             transactions.remove(context.xid);
             context.transaction.timedOut();
         }

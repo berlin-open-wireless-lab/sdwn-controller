@@ -13,6 +13,8 @@ import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.CONTINUE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
 
 public class DelClientTransaction extends SdwnTransactionAdapter {
@@ -64,8 +66,9 @@ public class DelClientTransaction extends SdwnTransactionAdapter {
                 client.macAddress().equals(MacAddress.valueOf(delClientMsg.getClient().getBytes()))) {
 
             controller.removeClient(client);
+            return DONE;
+        } else {
+            return CONTINUE;
         }
-
-        return null;
     }
 }

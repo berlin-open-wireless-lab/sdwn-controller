@@ -12,10 +12,12 @@ import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsReply;
 import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsRequest;
 import org.projectfloodlight.openflow.protocol.OFStatsReplyFlags;
 import org.projectfloodlight.openflow.types.OFPort;
+import org.slf4j.Logger;
 
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.CONTINUE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
 import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class GetClientsQuery extends SdwnTransactionAdapter {
 
@@ -23,6 +25,8 @@ public class GetClientsQuery extends SdwnTransactionAdapter {
     private final SdwnAccessPoint ap;
     private SdwnCoreService controller;
     private final long timeout;
+
+    private final Logger log = getLogger(getClass());
 
     public GetClientsQuery(SdwnAccessPoint ap, Dpid dpid, SdwnCoreService controller, long timeout) {
         this.ap = ap;
@@ -62,5 +66,10 @@ public class GetClientsQuery extends SdwnTransactionAdapter {
         controller.newClient(ap, newClient);
         boolean done = !reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE);
         return done ? DONE : CONTINUE;
+    }
+
+    @Override
+    public void timedOut() {
+        log.info("Get Clients query has timed out. This probably means that the queried AP does not have any associated clients.");
     }
 }

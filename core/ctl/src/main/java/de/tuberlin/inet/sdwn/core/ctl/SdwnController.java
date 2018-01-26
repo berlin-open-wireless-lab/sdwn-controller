@@ -377,7 +377,14 @@ public class SdwnController implements SdwnCoreService {
 
     @Override
     public void removeClient(SdwnClient client) {
+        log.info("{} disconnected from [{}]:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
+
+        SdwnAccessPoint ap = client.ap();
         client.disassoc();
+        clientListeners.forEach(l -> l.clientDisassociated(client, ap));
+        store.removeClient(client.macAddress());
+        hostProviderService.hostVanished(hostId(client.macAddress()));
+
     }
 
     @Override
@@ -820,7 +827,6 @@ public class SdwnController implements SdwnCoreService {
             // FIXME! hostapd on the agent does not have HT/VHT capabilities at this time
             //       send get client request to fetch capabilities/(V)HT capabilities. Needs new SdwnTransactionContext
             publishHostForClient(client);
-            transactionManager.msgReceived(dpid, msg);
         }
 
         private void handleDelClientNotification(Dpid dpid, OFSdwnDelClient msg) {
@@ -834,14 +840,7 @@ public class SdwnController implements SdwnCoreService {
                 store.removeClient(client.macAddress());
             }
 
-            log.info("Client {} disconnected from AP {} on {}", client.macAddress(), client.ap(), dpid);
-
-            SdwnAccessPoint ap = client.ap();
-            client.disassoc();
-            clientListeners.forEach(l -> l.clientDisassociated(client, ap));
-            store.removeClient(client.macAddress());
-            hostProviderService.hostVanished(hostId(client.macAddress()));
-            transactionManager.msgReceived(dpid, msg);
+            removeClient(client);
         }
 
         @Override
