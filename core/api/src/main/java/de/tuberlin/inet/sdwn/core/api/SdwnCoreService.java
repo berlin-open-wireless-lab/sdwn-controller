@@ -125,12 +125,11 @@ public interface SdwnCoreService {
      * Announcement.
      *
      * @param dpid the Datapath ID of the switch where the AP is located
-     * @param ifNo the AP's port number
-     * @param freq the target hz
+     * @param apName the AP
+     * @param freq the target frequency in Hz
      * @param beaconCount the number of beacon frames after which the channel will be switched
-     * @return true on success, false otherwise
      */
-    boolean setChannel(Dpid dpid, int ifNo, int freq, int beaconCount);
+    void setChannel(Dpid dpid, String apName, int freq, int beaconCount);
 
     boolean registerClientAuthenticator(SdwnClientAuthenticatorService authenticator);
 

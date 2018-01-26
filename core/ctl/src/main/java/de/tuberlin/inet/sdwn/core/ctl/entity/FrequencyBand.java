@@ -98,6 +98,11 @@ public class FrequencyBand implements SdwnFrequencyBand {
     }
 
     @Override
+    public SdwnFrequency getFreq(int freq) {
+        return freqs.stream().filter(f -> f.hz() == freq).findFirst().orElse(null);
+    }
+
+    @Override
     public String toString() {
         MoreObjects.ToStringHelper helper = MoreObjects.toStringHelper(this);
         return helper.add("Band number", bandNumber)

@@ -26,6 +26,7 @@ import de.tuberlin.inet.sdwn.core.ctl.entity.Nic;
 import de.tuberlin.inet.sdwn.core.ctl.task.AddClientTransaction;
 import de.tuberlin.inet.sdwn.core.ctl.task.DelClientTransaction;
 import de.tuberlin.inet.sdwn.core.ctl.task.GetClientsQuery;
+import de.tuberlin.inet.sdwn.core.ctl.task.SetChannelTransaction;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -354,12 +355,6 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        long xid = xidGen.nextXid();
-
-        if (!sendDelClient(client.ap(), client, 1, true, banTime, xid)) {
-            return false;
-        }
-
         transactionManager.startTransaction(new DelClientTransaction(client, client.ap(), banTime, this, 5000));
         return true;
     }
@@ -386,36 +381,16 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public boolean setChannel(Dpid dpid, int ifNo, int freq, int beaconCount) {
-        OpenFlowWirelessSwitch sw = wirelessSwitchForDpid(dpid);
-        if (sw == null) {
-            log.error("Unknown switch: {}", dpid);
-            return false;
+    public void setChannel(Dpid dpid, String apName, int freq, int beaconCount) {
+
+        SdwnAccessPoint ap = store.apByDpidAndName(dpid, apName);
+
+        if (ap == null) {
+            log.error("[{}]:{} not known", dpid, apName);
+            return;
         }
 
-        boolean supported = false;
-        for (SdwnNic nic : store.nicsForSwitch(dpid)) {
-            if (nic.supportsFrequency(freq)) {
-                supported = true;
-                break;
-            }
-        }
-
-        if (!supported) {
-            log.error("{} does not support {} GHz", dpid,
-                    String.format("%1.3f", (double) freq / 1000.0));
-            return false;
-        }
-
-        OFSdwnSetChannel cmd = sw.factory().buildSdwnSetChannel()
-                .setXid(xidGen.nextXid())
-                .setIfNo(OFPort.of(ifNo))
-                .setFrequency(freq)
-                .setBeaconCount(beaconCount)
-                .build();
-
-        sw.sendMsg(cmd);
-        return true;
+        startTransaction(new SetChannelTransaction(dpid, ap, this, freq, beaconCount, 5000));
     }
 
     @Override
@@ -518,7 +493,7 @@ public class SdwnController implements SdwnCoreService {
                     SdwnTransaction getClientsQuery = new GetClientsQuery(ap, dpid, sdwnController, 5000);
                     log.info("Starting GetClientsQuery for [{}]:{}: {}", dpid, ap.name(), getClientsQuery);
                     transactionManager.startTransaction(getClientsQuery);
-                    
+
                 });
             }
 
@@ -763,46 +738,6 @@ public class SdwnController implements SdwnCoreService {
                 handleDelClientNotification(dpid, (OFSdwnDelClient) ofMessage);
             } else if (ofMessage instanceof OFSdwnGetClientsReply) {
                 transactionManager.msgReceived(dpid, ofMessage);
-            } else if (ofMessage instanceof OFSdwnSetChannel) {
-                handleSetChannelNotification(dpid, (OFSdwnSetChannel) ofMessage);
-            }
-        }
-
-        private void handleSetChannelNotification(Dpid dpid, OFSdwnSetChannel msg) {
-            SdwnNic apNic = store.nicsForSwitch(dpid).stream()
-                    .filter(nic -> !nic.aps().stream()
-                            .filter(ap -> ap.portNumber() == msg.getIfNo().getPortNumber())
-                            .collect(Collectors.toList()).isEmpty())
-                    .findFirst().orElse(null);
-            if (apNic == null) {
-                return;
-            }
-
-            for (SdwnAccessPoint ap : apNic.aps()) {
-                if (ap.portNumber() != msg.getIfNo().getPortNumber()) {
-                    continue;
-                }
-
-                SdwnFrequency freq = null;
-                for (SdwnFrequencyBand band : apNic.bands()) {
-                    if (band.containsFrequency(msg.getFrequency())) {
-                        freq = band.frequencies().stream()
-                                .filter(f -> f.hz() == msg.getFrequency())
-                                .findFirst().orElse(null);
-                        break;
-                    }
-                }
-
-                if (freq == null) {
-                    log.error("Set channel notification reports hz unsupported by NIC: {} MHz", msg.getFrequency());
-                    return;
-                }
-
-                ap.setFrequency(freq);
-                log.info("AP {} on {} is now operating at {} GHz (channel {})",
-                        ap.name(), dpid, String.format("%1.3f", (double) msg.getFrequency() / 1000.0),
-                        Ieee80211Channels.frequencyToChannel(msg.getFrequency()));
-                return;
             }
         }
 
