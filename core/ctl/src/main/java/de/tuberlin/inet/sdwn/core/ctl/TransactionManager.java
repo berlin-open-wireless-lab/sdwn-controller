@@ -30,21 +30,8 @@ public class TransactionManager {
         this.xidGen = xidGen;
     }
 
-    long startTransactionChain(SdwnTransactionChain chain) {
-        checkNotNull(chain);
-
-        TransactionContext ctx = new TransactionContext(chain.next());
-        transactions.put(ctx.xid, ctx);
-        ctx.transaction.start(ctx.xid);
-        ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
-
-        log.info("Started transaction {} as part of a transaction chain", ctx);
-
-        return ctx.xid;
-    }
-
     long startTransaction(SdwnTransaction t) {
-//        checkNotNull(t);
+        checkNotNull(t);
         log.info("Starting transaction {}", t);
 
         TransactionContext ctx = new TransactionContext(t);
@@ -57,6 +44,18 @@ public class TransactionManager {
         return ctx.xid;
     }
 
+    long startTransactionChain(SdwnTransactionChain chain) {
+        checkNotNull(chain);
+
+        TransactionContext ctx = new TransactionContext(chain.next());
+        transactions.put(ctx.xid, ctx);
+        ctx.transaction.start(ctx.xid);
+        ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
+
+        log.info("Started transaction {} as part of a transaction chain", ctx);
+
+        return ctx.xid;
+    }
 
     void msgReceived(Dpid dpid, OFMessage msg) {
         TransactionContext ctx;
