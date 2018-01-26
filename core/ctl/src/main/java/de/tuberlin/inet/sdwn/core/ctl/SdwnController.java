@@ -85,7 +85,7 @@ import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -367,7 +367,7 @@ public class SdwnController implements SdwnCoreService {
         OpenFlowSwitch ofsw = controller.getSwitch(dpid);
 
         if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof OpenFlowWirelessSwitch)) {
-            // TODO log error
+            log.error("Could not send message to {}: Not found or not connected", dpid);
             return false;
         }
 
@@ -718,6 +718,8 @@ public class SdwnController implements SdwnCoreService {
 
     private class InternalSdwnMessageListener implements OpenFlowMessageListener {
 
+        private ExecutorService msgHandlers = Executors.newCachedThreadPool();
+
         private boolean isSdwnMsg(OFMessage msg) {
             return (msg instanceof OFSdwnHeader || msg instanceof OFSdwnReply);
         }
@@ -729,17 +731,16 @@ public class SdwnController implements SdwnCoreService {
             }
 
             if (ofMessage instanceof OFSdwnIeee80211Mgmt) {
-                handleMgmtFrame(dpid, (OFSdwnIeee80211Mgmt) ofMessage);
+                msgHandlers.execute(() -> handleMgmtFrame(dpid, (OFSdwnIeee80211Mgmt) ofMessage));
+            } else if (transactionManager.isOngoing(ofMessage.getXid())) {
+                msgHandlers.execute(() -> transactionManager.msgReceived(dpid, ofMessage));
             } else if (ofMessage instanceof OFSdwnAddClient) {
-                handleAddClientNotification(dpid, (OFSdwnAddClient) ofMessage);
+                msgHandlers.execute(() -> handleAddClientNotification(dpid, (OFSdwnAddClient) ofMessage));
             } else if (ofMessage instanceof OFSdwnDelClient) {
-                handleDelClientNotification(dpid, (OFSdwnDelClient) ofMessage);
-            } else if (ofMessage instanceof OFSdwnGetClientsReply) {
-                transactionManager.msgReceived(dpid, ofMessage);
+                msgHandlers.execute(() -> handleDelClientNotification(dpid, (OFSdwnDelClient) ofMessage));
             }
         }
 
-        // TODO: use thread pool for message handling
         // TODO: client authenticator needs to handle AUTH and ASSOC frames
         private void handleMgmtFrame(Dpid dpid, OFSdwnIeee80211Mgmt msg) {
             SdwnAccessPoint ap = ifNoToAp(dpid, msg.getIfNo().getPortNumber());

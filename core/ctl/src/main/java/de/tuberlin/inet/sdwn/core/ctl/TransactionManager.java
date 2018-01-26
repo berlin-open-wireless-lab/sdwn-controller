@@ -32,7 +32,6 @@ public class TransactionManager {
 
     long startTransaction(SdwnTransaction t) {
         checkNotNull(t);
-        log.info("Starting transaction {}", t);
 
         TransactionContext ctx = new TransactionContext(t);
         transactions.put(ctx.xid, ctx);
@@ -40,8 +39,18 @@ public class TransactionManager {
         ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
 
         log.info("Started transaction {}", ctx);
-
         return ctx.xid;
+    }
+
+    void startTransaction(SdwnTransaction t, long xid) {
+        checkNotNull(t);
+
+        TransactionContext ctx = new TransactionContext(t, xid);
+        transactions.replace(xid, ctx);
+        ctx.transaction.start(xid);
+        ctx.timer.newTimeout(new TransactionTimeoutTask(ctx), ctx.transaction.timeout(), TimeUnit.MILLISECONDS);
+
+        log.info("Started transaction {}", ctx);
     }
 
     long startTransactionChain(SdwnTransactionChain chain) {
