@@ -22,6 +22,9 @@ public class Ieee80211HtCapabilitiesCodec extends JsonCodec<Ieee80211HtCapabilit
 
         result.put("max_rx_ampdu_length", htCap.getMaxRxAmpduLen());
         result.put("min_rx_ampdu_time_spacing", htCap.getMinRxAmpduSpacing());
+        result.put("mcs_rx_mask", htCap.getMcsRxMask());
+        result.put("mcs_rx_highest", htCap.getMcsRxHighest());
+        result.put("mcs_tx_params", htCap.getMcsTxParams());
         return result;
     }
 }

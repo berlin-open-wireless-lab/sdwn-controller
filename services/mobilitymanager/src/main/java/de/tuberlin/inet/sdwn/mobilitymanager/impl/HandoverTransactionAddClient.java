@@ -60,15 +60,6 @@ public class HandoverTransactionAddClient extends SdwnTransactionAdapter {
         OpenFlowWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
         checkNotNull(sw);
 
-        // TODO:
-        // blacklist the client at
-        // a) all APs if the no hearing map service is available
-        // b) all APs that have recently overheard the client if the hearingmap is available
-        controller.aps().forEach(ap -> {
-            controller.blacklistClientAtAp(ap, client.macAddress(), 10000);
-            blacklistedAt.add(ap);
-        });
-
         // start the handover by dis-associating the client at its current AP
         sw.sendMsg(sw.factory().buildSdwnDelClient()
                 .setXid(xid)
