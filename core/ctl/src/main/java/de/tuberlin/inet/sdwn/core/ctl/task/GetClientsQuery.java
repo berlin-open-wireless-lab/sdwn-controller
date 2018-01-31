@@ -70,6 +70,6 @@ public class GetClientsQuery extends SdwnTransactionAdapter {
 
     @Override
     public void timedOut() {
-        log.info("Get Clients query has timed out. This probably means that the queried AP does not have any associated clients.");
+        log.info("Time-out at [{}]:{}. Probably because there are no associated clients.", dpid, ap.name());
     }
 }
