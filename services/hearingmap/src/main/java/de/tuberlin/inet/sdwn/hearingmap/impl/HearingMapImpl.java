@@ -86,7 +86,7 @@ public class HearingMapImpl implements SdwnHearingMap {
 
     @Activate
     public void activate() {
-        sdwnService.register80211MgtmFrameListener(frameListener, 0);
+        sdwnService.register80211MgmtFrameListener(frameListener, 0);
         sdwnService.registerSwitchListener(switchListener);
         log.info("Started");
     }

@@ -57,7 +57,7 @@ public class MobilityManager implements SdwnMobilityManager {
     public void activate() {
         controller.registerClientListener(clientListener);
         controller.registerSwitchListener(switchListener);
-        controller.register80211MgtmFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
+        controller.register80211MgmtFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
         log.info("Started");
     }
 
@@ -77,7 +77,7 @@ public class MobilityManager implements SdwnMobilityManager {
         if (!Strings.isNullOrEmpty(updatedConfig)) {
             mobilityManagerMgmtFramePrio = Integer.valueOf(updatedConfig);
             controller.remove80211MgmtFrameListener(mgmtFrameListener);
-            controller.register80211MgtmFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
+            controller.register80211MgmtFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
             log.info("Mobility Manager priority for handling 802.11 management frames set to {}", updatedConfig);
         }
         updatedConfig = Tools.get(properties, MOBILITY_MANAGER_HANDOVER_TIMEOUT);

@@ -243,7 +243,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
+    public void register80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
         mgmtFrameListeners.addListener(listener, priority);
     }
 

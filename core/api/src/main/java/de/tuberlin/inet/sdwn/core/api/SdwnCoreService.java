@@ -170,7 +170,7 @@ public interface SdwnCoreService {
      * @param listener the listener
      * @throws IllegalArgumentException
      */
-    void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException;
+    void register80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException;
 
     /**
      * Un-register the given {@code Sdwn80211MgmtFrameListener}.
