@@ -120,7 +120,7 @@ public class HearingMapImpl implements SdwnHearingMap {
             }
             entries.add(newEntry);
         } else {
-            log.info("{} heard at {}", mac, dpid);
+            log.debug("{} heard at [{}]:[]", mac, dpid, ap.name());
             map.computeIfAbsent(mac, macAddress -> new ArrayList<>()).add(newEntry);
         }
 
