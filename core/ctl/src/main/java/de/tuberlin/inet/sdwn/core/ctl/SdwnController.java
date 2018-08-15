@@ -18,26 +18,18 @@ package de.tuberlin.inet.sdwn.core.ctl;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import de.tuberlin.inet.sdwn.core.api.Ieee80211Capability;
-import de.tuberlin.inet.sdwn.core.api.SdwnClientListener;
-import de.tuberlin.inet.sdwn.core.api.SdwnSwitchListener;
+import de.tuberlin.inet.sdwn.core.api.*;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequency;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequencyBand;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
 import de.tuberlin.inet.sdwn.core.ctl.entity.ClientCryptoKeys;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Nic;
-import de.tuberlin.inet.sdwn.core.ctl.task.AddClientTask;
-import de.tuberlin.inet.sdwn.core.ctl.task.DelClientTask;
+import de.tuberlin.inet.sdwn.core.ctl.task.AddClientContext;
+import de.tuberlin.inet.sdwn.core.ctl.task.DelClientContext;
 import de.tuberlin.inet.sdwn.core.ctl.task.GetClientsQuery;
-import de.tuberlin.inet.sdwn.core.api.Ieee80211Channels;
-import de.tuberlin.inet.sdwn.core.api.Sdwn80211MgmtFrameListener;
-import de.tuberlin.inet.sdwn.core.api.SdwnClientAuthenticatorService;
-import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
-import de.tuberlin.inet.sdwn.core.api.SdwnTransactionManager;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
-import de.tuberlin.inet.sdwn.core.ctl.task.HandoverTask;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -95,14 +87,7 @@ import org.projectfloodlight.openflow.types.McsRxMask;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -150,11 +135,12 @@ public class SdwnController implements SdwnCoreService {
     private long transactionTimeout = DEFAULT_TRANSACTION_TIMEOUT;
 
     private XidGenerator xidGen = XidGenerators.create();
-    protected SdwnTransactionManager sdwnManager = new SdwnManager(this, transactionTimeout);
+    protected SdwnTransactionManager transactionManager = new DefaultSdwnTransactionManager(this);
+
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
     protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
     protected Set<SdwnClientListener> clientListeners = new ConcurrentSet<>();
-    protected Set<Sdwn80211MgmtFrameListener> mgmtFrameListeners = new ConcurrentSet<>();
+    protected MgmtFrameListenerList mgmtFrameListeners = new MgmtFrameListenerList();
     protected SdwnEntityStore store = new SdwnEntityStore();
 
     protected SdwnClientAuthenticatorService clientAuthenticator;
@@ -210,7 +196,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public void unregisterClientAuthenticator(SdwnClientAuthenticatorService authenticator) {
+    public void removeClientAuthenticator(SdwnClientAuthenticatorService authenticator) {
         if (clientAuthenticator.getClass().equals(authenticator.getClass())) {
             log.info("Client authenticator {} unregistered", clientAuthenticator.getClass().toString());
             clientAuthenticator = null;
@@ -241,7 +227,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public void unregisterSwitchListener(SdwnSwitchListener listener) {
+    public void removeSwitchListener(SdwnSwitchListener listener) {
         switchListeners.remove(listener);
     }
 
@@ -255,21 +241,18 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public void unregisterClientListener(SdwnClientListener listener) {
+    public void removeClientListener(SdwnClientListener listener) {
         clientListeners.remove(listener);
     }
 
     @Override
-    public void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener) throws IllegalArgumentException {
-        if (mgmtFrameListeners.contains(listener)) {
-            throw new IllegalArgumentException("Listener already registered");
-        }
-        mgmtFrameListeners.add(listener);
+    public void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
+        mgmtFrameListeners.addListener(listener, priority);
     }
 
     @Override
-    public void unregister80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener) {
-        mgmtFrameListeners.remove(listener);
+    public void remove80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener) {
+        mgmtFrameListeners.removeListener(listener);
     }
 
     @Override
@@ -337,33 +320,13 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        sdwnManager.startTransaction(new DelClientTask(xid, 10, client, client.ap()));
+        transactionManager.startTransaction(new DelClientContext(xid, client, client.ap()), 5000);
         return true;
     }
 
     @Override
     public void removeClient(SdwnClient client) {
         client.disassoc();
-    }
-
-    @Override
-    public boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp) {
-        checkNotNull(toAp);
-
-        SdwnClient client;
-        if (clientMac == null || (client = store.getClient(clientMac)) == null) {
-            log.error("Unknown client: {}", clientMac);
-            return false;
-        }
-
-        return startHandOver(client, toAp);
-    }
-
-    @Override
-    public boolean handOver(SdwnClient client, SdwnAccessPoint toAp) {
-        checkNotNull(client);
-        checkNotNull(toAp);
-        return startHandOver(client, toAp);
     }
 
     @Override
@@ -384,7 +347,7 @@ public class SdwnController implements SdwnCoreService {
 
         if (!supported) {
             log.error("{} does not support {} GHz", dpid,
-                      String.format("%1.3f", (double) freq / 1000.0));
+                    String.format("%1.3f", (double) freq / 1000.0));
             return false;
         }
 
@@ -400,18 +363,20 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public void sendProbeResponse(MacAddress staMac, SdwnAccessPoint ap, long xid, boolean denied) {
-        send80211MgmtReply(staMac, ap, xid, denied);
-    }
+    public long startTransaction(SdwnTransactionContext t, long timeout) {
+        long xid;
 
-    @Override
-    public void sendAuthResponse(MacAddress staMac, SdwnAccessPoint ap, long xid, boolean denied) {
-        send80211MgmtReply(staMac, ap, xid, denied);
-    }
+        if (t.xid() == SdwnTransactionContext.NO_XID) {
+            xid = xidGen.nextXid();
+            t.setXid(xid);
+        } else {
+            xid = t.xid();
+        }
 
-    @Override
-    public void sendAssocResponse(MacAddress staMac, SdwnAccessPoint ap, long xid, boolean denied) {
-        send80211MgmtReply(staMac, ap, xid, denied);
+        log.info("Starting transaction {} (xid {})", t, xid);
+
+        transactionManager.startTransaction(t, timeout);
+        return xid;
     }
 
     private void send80211MgmtReply(MacAddress client, SdwnAccessPoint ap, long xid, boolean denied) {
@@ -448,6 +413,22 @@ public class SdwnController implements SdwnCoreService {
         return store.relatedSwitch(dpid);
     }
 
+    @Override
+    public boolean sendMsg(Dpid dpid, OFMessage msg) {
+        if (dpid == null || msg == null) {
+            return false;
+        }
+
+        OpenFlowSwitch ofsw = controller.getSwitch(dpid);
+        if (ofsw == null || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+            return false;
+        }
+
+        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) ofsw;
+        sw.sendMsg(msg);
+        return true;
+    }
+
     private class InternalSwitchListener implements OpenFlowSwitchListener {
 
         @Override
@@ -467,6 +448,8 @@ public class SdwnController implements SdwnCoreService {
                     .map(nicEntity -> Nic.fromOF(dpid, nicEntity, sw.sdwnEntities()))
                     .collect(Collectors.toList());
 
+            log.info("NICS: {}", sw.nicEntities());
+
             store.putNics(nics);
 
             List<OFMessage> getClientsMsgs = new LinkedList<>();
@@ -475,7 +458,7 @@ public class SdwnController implements SdwnCoreService {
                     store.putAp(ap, nic);
                     OFSdwnGetClientsRequest msg = buildGetClientsMessage(sw, ap);
                     getClientsMsgs.add(msg);
-                    sdwnManager.startTransaction(new GetClientsQuery(msg.getXid(), 3000, ap.name(), dpid));
+                    transactionManager.startTransaction(new GetClientsQuery(msg.getXid(), ap.name(), dpid), 5000);
                 });
             }
 
@@ -537,10 +520,10 @@ public class SdwnController implements SdwnCoreService {
     private OFIeee80211HtCap emptyHtCaps(OFFactory factory) {
         return factory.buildIeee80211HtCap()
                 .setMcs(factory.buildIeee80211McsInfo()
-                                .setTxParams((short) 0)
-                                .setRxHighest(0)
-                                .setRxMask(McsRxMask.NONE)
-                                .build())
+                        .setTxParams((short) 0)
+                        .setRxHighest(0)
+                        .setRxMask(McsRxMask.NONE)
+                        .build())
                 .setAmpduParamsInfo((short) 0)
                 .setAntennaSelectionInfo((short) 0)
                 .setCapInfo(0)
@@ -565,7 +548,7 @@ public class SdwnController implements SdwnCoreService {
     private boolean sendAddClient(SdwnAccessPoint ap, SdwnClient client) {
         if (client.ap() != null || client.ap() == ap) {
             log.error("Cannot add client {} to AP {}: Already associated with {}",
-                      client.macAddress(), ap.bssid(), client.ap().bssid());
+                    client.macAddress(), ap.bssid(), client.ap().bssid());
             return false;
         }
 
@@ -575,7 +558,7 @@ public class SdwnController implements SdwnCoreService {
         }
 
         log.info("Adding client {} to AP {} on Switch {}",
-                 client.macAddress(), ap.name(), sw.getStringId());
+                client.macAddress(), ap.name(), sw.getStringId());
 
         // TODO: verify overlap of supported rates
         StringBuilder sb = new StringBuilder("");
@@ -608,7 +591,7 @@ public class SdwnController implements SdwnCoreService {
             cmdBuilder.setKeys(ClientCryptoKeys.toOF(client.keys(), sw.factory()));
         }
 
-        sdwnManager.startTransaction(new AddClientTask(xidGen.nextXid(), 3000, client, ap));
+        transactionManager.startTransaction(new AddClientContext(xidGen.nextXid(), client, ap), 3000);
         log.info("Sending {}", cmdBuilder.build());
         sw.sendMsg(cmdBuilder.build());
         return true;
@@ -622,7 +605,7 @@ public class SdwnController implements SdwnCoreService {
         }
 
         ConnectPoint connPoint = new ConnectPoint(deviceId(uri(dpid)),
-                                                  PortNumber.portNumber(client.ap().portNumber()));
+                PortNumber.portNumber(client.ap().portNumber()));
         HostLocation loc = new HostLocation(connPoint, currentTimeMillis());
         HostDescription desc = new DefaultHostDescription(client.macAddress(), VlanId.NONE, loc);
 
@@ -638,14 +621,14 @@ public class SdwnController implements SdwnCoreService {
 
         if (!client.ap().equals(ap) || !ap.clientIsAssociated(client.macAddress())) {
             log.error("Could not delete client {} from AP {} on {}: Client is not associated.",
-                      client.macAddress(), ap.name(), ap.nic().switchID());
+                    client.macAddress(), ap.name(), ap.nic().switchID());
             return false;
         }
 
         OpenFlowWirelessSwitch sw = switchForAP(ap);
         if (sw == null) {
             log.error("Could not delete client {} from AP {} on {}: Switch unknown or not connected.",
-                      client.macAddress(), ap.name(), ap.nic().switchID());
+                    client.macAddress(), ap.name(), ap.nic().switchID());
             return false;
         }
 
@@ -710,24 +693,6 @@ public class SdwnController implements SdwnCoreService {
         sw.sendMsg(cmd);
     }
 
-    private boolean startHandOver(SdwnClient client, SdwnAccessPoint toAp) {
-        if (client.ap().equals(toAp)) {
-            log.error("Client {} is already associated with AP {} on {}", client.macAddress(), toAp.bssid(), toAp.nic().switchID());
-            return false;
-        }
-
-        log.info("Handing over {} from {} on {} to {} on {}", client.macAddress(),
-                 client.ap().name(), client.ap().nic().switchID(), toAp.name(), toAp.nic().switchID());
-
-        long xid = xidGen.nextXid();
-
-        if (!sendDelClient(client.ap(), client, 1, true, 10, xid)) {
-            return false;
-        }
-        sdwnManager.startTransaction(new HandoverTask(xid, 8000, toAp, client));
-        return true;
-    }
-
     private class InternalSdwnMessageListener implements OpenFlowMessageListener {
 
         private boolean isSdwnMsg(OFMessage msg) {
@@ -747,7 +712,7 @@ public class SdwnController implements SdwnCoreService {
             } else if (ofMessage instanceof OFSdwnDelClient) {
                 handleDelClientNotification(dpid, (OFSdwnDelClient) ofMessage);
             } else if (ofMessage instanceof OFSdwnGetClientsReply) {
-                sdwnManager.msgReceived(dpid, ofMessage);
+                transactionManager.msgReceived(dpid, ofMessage);
             } else if (ofMessage instanceof OFSdwnSetChannel) {
                 handleSetChannelNotification(dpid, (OFSdwnSetChannel) ofMessage);
             }
@@ -785,8 +750,8 @@ public class SdwnController implements SdwnCoreService {
 
                 ap.setFrequency(freq);
                 log.info("AP {} on {} is now operating at {} GHz (channel {})",
-                         ap.name(), dpid, String.format("%1.3f", (double) msg.getFrequency() / 1000.0),
-                         Ieee80211Channels.frequencyToChannel(msg.getFrequency()));
+                        ap.name(), dpid, String.format("%1.3f", (double) msg.getFrequency() / 1000.0),
+                        Ieee80211Channels.frequencyToChannel(msg.getFrequency()));
                 return;
             }
         }
@@ -799,21 +764,58 @@ public class SdwnController implements SdwnCoreService {
                 return;
             }
 
+            Sdwn80211MgmtFrameListener.ResponseAction responseAction;
+            Sdwn80211MgmtFrameListener.ResponseAction lastResponse = Sdwn80211MgmtFrameListener.ResponseAction.NONE;
+            int lastPriority = 0;
+
             switch (msg.getIeee80211Type()) {
                 case ASSOC:
-                    mgmtFrameListeners.forEach(listener -> listener.receivedAssocRequest(
-                            MacAddress.valueOf(msg.getAddr().getBytes()),
-                            ap, msg.getXid(), msg.getSsi(), msg.getFreq()));
+                    for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
+                        responseAction = e.listener.receivedAssocRequest(MacAddress.valueOf(msg.getAddr().getBytes()),
+                                ap, msg.getXid(), msg.getSsi(), msg.getFreq());
+
+                        if ((responseAction != lastResponse) && (e.priority > lastPriority)) {
+                            lastResponse = responseAction;
+                            lastPriority = e.priority;
+                        }
+                    }
+
+                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
+                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
+                    }
+
                     break;
                 case AUTH:
-                    mgmtFrameListeners.forEach(listener -> listener.receivedAuthRequest(
-                            MacAddress.valueOf(msg.getAddr().getBytes()),
-                            ap, msg.getXid(), msg.getSsi(), msg.getFreq()));
+                    for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
+                        responseAction = e.listener.receivedAuthRequest(MacAddress.valueOf(msg.getAddr().getBytes()),
+                                ap, msg.getXid(), msg.getSsi(), msg.getFreq());
+
+                        if ((responseAction != lastResponse) && (e.priority > lastPriority)) {
+                            lastResponse = responseAction;
+                            lastPriority = e.priority;
+                        }
+                    }
+
+                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
+                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
+                    }
+
                     break;
                 case PROBE:
-                    mgmtFrameListeners.forEach(listener -> listener.receivedProbeRequest(
-                            MacAddress.valueOf(msg.getAddr().getBytes()),
-                            ap, msg.getXid(), msg.getSsi(), msg.getFreq()));
+                    for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
+                        responseAction = e.listener.receivedProbeRequest(MacAddress.valueOf(msg.getAddr().getBytes()),
+                                ap, msg.getXid(), msg.getSsi(), msg.getFreq());
+
+                        if ((responseAction != lastResponse) && (e.priority > lastPriority)) {
+                            lastResponse = responseAction;
+                            lastPriority = e.priority;
+                        }
+                    }
+
+                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
+                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
+                    }
+
                     break;
             }
         }
@@ -850,9 +852,9 @@ public class SdwnController implements SdwnCoreService {
             store.addClient(client, ap);
             clientListeners.forEach(l -> l.clientAssociated(client));
             // FIXME! hostapd on the agent does not have HT/VHT capabilities at this time
-            //       send get client request to fetch capabilities/(V)HT capabilities. Needs new SdwnTransactionTask
+            //       send get client request to fetch capabilities/(V)HT capabilities. Needs new SdwnTransactionContext
             publishHostForClient(client);
-            sdwnManager.msgReceived(dpid, msg);
+            transactionManager.msgReceived(dpid, msg);
         }
 
         private void handleDelClientNotification(Dpid dpid, OFSdwnDelClient msg) {
@@ -861,17 +863,19 @@ public class SdwnController implements SdwnCoreService {
 
             if (client.ap().portNumber() != msg.getAp().getPortNumber()) {
                 log.error("Data mismatch! Switch {} reports {} disassociated from AP {}. We thought it was associated with {}({}) on {}",
-                          dpid, client.macAddress(), msg.getAp().getPortNumber(),
-                          client.ap().name(), client.ap().portNumber(), client.ap().nic().switchID());
+                        dpid, client.macAddress(), msg.getAp().getPortNumber(),
+                        client.ap().name(), client.ap().portNumber(), client.ap().nic().switchID());
                 store.removeClient(client.macAddress());
             }
 
             log.info("Client {} disconnected from AP {} on {}", client.macAddress(), client.ap(), dpid);
 
-            clientListeners.forEach(l -> l.clientDisassociated(client));
+            SdwnAccessPoint ap = client.ap();
+            client.disassoc();
+            clientListeners.forEach(l -> l.clientDisassociated(client, ap));
             store.removeClient(client.macAddress());
             hostProviderService.hostVanished(hostId(client.macAddress()));
-            sdwnManager.msgReceived(dpid, msg);
+            transactionManager.msgReceived(dpid, msg);
         }
 
         @Override

@@ -1,4 +1,4 @@
-package de.tuberlin.inet.sdwn.hearingmap.api;
+package de.tuberlin.inet.sdwn.hearingmap;
 
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import org.onlab.packet.MacAddress;

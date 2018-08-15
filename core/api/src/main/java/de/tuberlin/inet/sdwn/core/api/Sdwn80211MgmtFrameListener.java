@@ -5,9 +5,15 @@ import org.onlab.packet.MacAddress;
 
 public interface Sdwn80211MgmtFrameListener {
 
-    void receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq);
+    enum ResponseAction {
+        NONE,
+        GRANT,
+        DENY
+    }
 
-    void receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq);
+    ResponseAction receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq);
 
-    void receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq);
+    ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq);
+
+    ResponseAction receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq);
 }

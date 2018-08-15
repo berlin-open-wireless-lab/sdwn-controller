@@ -5,6 +5,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
+import org.projectfloodlight.openflow.protocol.OFMessage;
 
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -93,9 +94,6 @@ public interface SdwnCoreService {
      */
     SdwnClient getClient(MacAddress mac);
 
-    boolean handOver(MacAddress clientMac, SdwnAccessPoint toAp);
-    boolean handOver(SdwnClient client, SdwnAccessPoint toAp);
-
     /**
      * Make an AP change its operating channel. The AP will send a Channel Switch
      * Announcement.
@@ -110,7 +108,7 @@ public interface SdwnCoreService {
 
     boolean registerClientAuthenticator(SdwnClientAuthenticatorService authenticator);
 
-    void unregisterClientAuthenticator(SdwnClientAuthenticatorService authenticator);
+    void removeClientAuthenticator(SdwnClientAuthenticatorService authenticator);
 
     /**
      * Register an {@code SdwnSwitchListener} to hook into the controller's switch lifecycle
@@ -124,7 +122,7 @@ public interface SdwnCoreService {
     /**
      * Un-register the given {@code SdwnSwitchListener}.
      */
-    void unregisterSwitchListener(SdwnSwitchListener listener);
+    void removeSwitchListener(SdwnSwitchListener listener);
 
     /**
      * Register an {@code SdwnClientListener} to hook into the controller's client
@@ -138,7 +136,7 @@ public interface SdwnCoreService {
     /**
      * Un-register the given {@code SdwnClientListener}.
      */
-    void unregisterClientListener(SdwnClientListener listener);
+    void removeClientListener(SdwnClientListener listener);
 
     /**
      * Register an {@code Sdwn80211MgmtFrameListener} to receive notifications
@@ -147,42 +145,21 @@ public interface SdwnCoreService {
      * @param listener the listener
      * @throws IllegalArgumentException
      */
-    void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener) throws IllegalArgumentException;
+    void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException;
 
     /**
      * Un-register the given {@code Sdwn80211MgmtFrameListener}.
      */
-    void unregister80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener);
+    void remove80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener);
+
 
     /**
-     * React to a Probe Request.
+     * Start the given transaction.
      *
-     * @param clientMac the client that sent the request
-     * @param ap the AP that received the request
-     * @param xid the XID of the incoming notification
-     * @param deny flag instructing the AP to deny the request
+     * @param t the transaction
+     * @return the XID
      */
-    void sendProbeResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
-
-    /**
-     * React to an Authentication Request.
-     *
-     * @param clientMac the client that sent the request
-     * @param ap the AP that received the request
-     * @param xid the XID of the incoming notification
-     * @param deny flag instructing the AP to deny the request
-     */
-    void sendAuthResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
-
-    /**
-     * React to an Association Request.
-     *
-     * @param clientMac the client that sent the request
-     * @param ap the AP that received the request
-     * @param xid the XID of the incoming notification
-     * @param deny flag instructing the AP to deny the request
-     */
-    void sendAssocResponse(MacAddress clientMac, SdwnAccessPoint ap, long xid, boolean deny);
+    long startTransaction(SdwnTransactionContext t, long timeout);
 
     SdwnClient createClientFromJson(ObjectNode node);
 
@@ -190,4 +167,13 @@ public interface SdwnCoreService {
      * Get the Datapath ID of the related OpenFlow siwitch for the given switch.
      */
     Dpid getRelatedOfSwitch(Dpid dpid);
+
+    /**
+     * Send a message to a switch.
+     *
+     * @param dpid Datapath ID of the destination switch
+     * @param msg OpenFlow message to send
+     * @return true on success, false on failure
+     */
+    boolean sendMsg(Dpid dpid, OFMessage msg);
 }

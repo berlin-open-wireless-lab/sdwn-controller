@@ -105,13 +105,13 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
     }
 
     @Override
-    public boolean register(String uri, IpAddress addr, int port, String name, String ubusPath) throws MalformedURLException {
-        return register(uri, addr, port, capabilityName, capabilityMatch, capabilityScript, ubusPath);
+    public boolean register(String uri, String apiKey, IpAddress addr, int port, String name, String ubusPath) throws MalformedURLException {
+        return register(uri, apiKey, addr, port, capabilityName, capabilityMatch, capabilityScript, ubusPath);
     }
 
     @Override
-    public boolean register(String uri, IpAddress addr, int port, String capName, String capMatch, String capScript, String ubusPath) throws MalformedURLException {
-        OpenWifiRestClient client = newOpenWifiRestClient(uri);
+    public boolean register(String uri, String apiKey, IpAddress addr, int port, String capName, String capMatch, String capScript, String ubusPath) throws MalformedURLException {
+        OpenWifiRestClient client = newOpenWifiRestClient(uri, apiKey);
         String id;
 
         log.info("Registering with OpenWifi at {}", uri);
@@ -169,8 +169,8 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
     }
 
     @Override
-    public boolean unregister(String uri, String id) throws MalformedURLException {
-        Response response = newOpenWifiRestClient(uri).unregister(id);
+    public boolean unregister(String uri, String apiKey, String id) throws MalformedURLException {
+        Response response = newOpenWifiRestClient(uri, apiKey).unregister(id);
 
         if (response.getStatus() != 200) {
             log.error("De-registration failed with status {}", response.getStatus());
@@ -306,17 +306,19 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
         return urls;
     }
 
-    private OpenWifiRestClient newOpenWifiRestClient(String uriStr) throws MalformedURLException {
+    private OpenWifiRestClient newOpenWifiRestClient(String uriStr, String apiKey) throws MalformedURLException {
         URL url = URI.create(uriStr).toURL();
-        return new OpenWifiRestClient(url);
+        return new OpenWifiRestClient(url, apiKey);
     }
 
     private class OpenWifiRestClient {
 
         URL url;
+        String apiKey;
 
-        OpenWifiRestClient(URL url) {
+        OpenWifiRestClient(URL url, String apiKey) {
             this.url = url;
+            this.apiKey = apiKey;
         }
 
         Response register(IpAddress addr, int port, String name, String capMatch, String capScript, String ubusPath) {
@@ -336,7 +338,7 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
                     .put("capability_match", capMatch)
                     .put("capability_script", capScript);
 
-            return client.target(url.toString() + "/service")
+            return client.target(String.format("%s/service?key=%s", url.toString(), apiKey))
                     .request(MediaType.TEXT_PLAIN_TYPE)
                     .header("Content-Type", "application/json")
                     .post(Entity.json(request));

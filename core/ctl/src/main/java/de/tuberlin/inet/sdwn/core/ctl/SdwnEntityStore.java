@@ -51,7 +51,10 @@ public class SdwnEntityStore {
             } else {
                 switchToNicsMap.put(nic.switchID(), Lists.newArrayList(nic));
             }
+
+            log.info("Switch {} has NIC {}", nic.switchID(), nic.mac());
         });
+
     }
 
     public void putAp(SdwnAccessPoint ap, SdwnNic nic) {
@@ -70,7 +73,7 @@ public class SdwnEntityStore {
         }
         this.apsByDpidAndName.put(String.format("%s-%s", nic.switchID(), ap.name()), ap);
 
-        log.info("NIC {} is hosting AP {} for BSSID {}", nic.mac().toString(), ap.name(), ap.bssid());
+        log.info("NIC {} is hosting AP {} (BSSID {})", nic.mac().toString(), ap.name(), ap.bssid());
     }
 
     public void removeAp(SdwnAccessPoint ap) {

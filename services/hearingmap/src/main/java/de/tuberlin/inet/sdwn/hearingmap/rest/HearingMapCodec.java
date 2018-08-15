@@ -2,7 +2,7 @@ package de.tuberlin.inet.sdwn.hearingmap.rest;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.tuberlin.inet.sdwn.hearingmap.api.SdwnHearingMap;
+import de.tuberlin.inet.sdwn.hearingmap.SdwnHearingMap;
 import org.onlab.packet.MacAddress;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;

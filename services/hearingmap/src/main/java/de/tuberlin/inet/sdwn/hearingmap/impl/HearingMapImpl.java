@@ -19,7 +19,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import de.tuberlin.inet.sdwn.core.api.Sdwn80211MgmtFrameListener;
 import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
-import de.tuberlin.inet.sdwn.hearingmap.api.SdwnHearingMap;
+import de.tuberlin.inet.sdwn.hearingmap.SdwnHearingMap;
 import de.tuberlin.inet.sdwn.core.api.SdwnSwitchListenerAdapter;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import io.netty.util.Timeout;
@@ -39,14 +39,7 @@ import org.onosproject.openflow.controller.Dpid;
 import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -93,15 +86,15 @@ public class HearingMapImpl implements SdwnHearingMap {
 
     @Activate
     public void activate() {
-        sdwnService.register80211MgtmFrameListener(frameListener);
+        sdwnService.register80211MgtmFrameListener(frameListener, 0);
         sdwnService.registerSwitchListener(switchListener);
         log.info("Started");
     }
 
     @Deactivate
     public void deactivate() {
-        sdwnService.unregisterSwitchListener(switchListener);
-        sdwnService.unregister80211MgmtFrameListener(frameListener);
+        sdwnService.removeSwitchListener(switchListener);
+        sdwnService.remove80211MgmtFrameListener(frameListener);
         log.info("Stopped");
     }
 
@@ -127,7 +120,7 @@ public class HearingMapImpl implements SdwnHearingMap {
             }
             entries.add(newEntry);
         } else {
-            log.info("{} heard client {}", dpid, mac);
+            log.info("{} heard at {}", mac, dpid);
             map.computeIfAbsent(mac, macAddress -> new ArrayList<>()).add(newEntry);
         }
 
@@ -144,7 +137,7 @@ public class HearingMapImpl implements SdwnHearingMap {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
-        toRemove.stream().forEach(map::remove);
+        toRemove.forEach(map::remove);
     }
 
     @Override
@@ -167,18 +160,21 @@ public class HearingMapImpl implements SdwnHearingMap {
 
     private final class InternalFrameListener implements Sdwn80211MgmtFrameListener {
         @Override
-        public void receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             clientHeard(atAP.nic().switchID(), atAP, clientMac, rssi, freq);
+            return ResponseAction.NONE;
         }
 
         @Override
-        public void receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             clientHeard(atAP.nic().switchID(), atAP, clientMac, rssi, freq);
+            return ResponseAction.NONE;
         }
 
         @Override
-        public void receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             clientHeard(atAP.nic().switchID(), atAP, clientMac, rssi, freq);
+            return ResponseAction.NONE;
         }
     }
 

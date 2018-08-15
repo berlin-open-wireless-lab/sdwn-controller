@@ -1,6 +1,6 @@
 package de.tuberlin.inet.sdwn.hearingmap.cli;
 
-import de.tuberlin.inet.sdwn.hearingmap.api.SdwnHearingMap;
+import de.tuberlin.inet.sdwn.hearingmap.SdwnHearingMap;
 import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
 

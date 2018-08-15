@@ -3,8 +3,10 @@ package de.tuberlin.inet.sdwn.core.api;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 
+import java.awt.font.TransformAttribute;
+
 /**
- * Management context for {@code SdwnTransactionTask}s.
+ * Management context for {@code SdwnTransactionContext}s.
  */
 public interface SdwnTransactionManager {
 
@@ -18,14 +20,14 @@ public interface SdwnTransactionManager {
      *
      * @param t the transaction
      */
-    void startTransaction(SdwnTransactionTask t);
+    void startTransaction(SdwnTransactionContext t, long timeout);
 
     /**
      * Cancel a transaction
      *
      * @param t the transaction
      */
-    void cancelTransaction(SdwnTransactionTask t);
+    void cancelTransaction(SdwnTransactionContext t);
 
     /**
      * Check if there is an ongoing transaction wit the given XID.

@@ -1,6 +1,6 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
-import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransaction;
+import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
@@ -8,15 +8,16 @@ import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
 
-import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionTask.TransactionStatus.SKIP;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext.TransactionStatus.SKIP;
 
-public class DelClientTask extends DefaultSdwnTransaction {
+public class DelClientContext extends DefaultSdwnTransactionContext {
 
     private final SdwnClient client;
     private final SdwnAccessPoint ap;
 
-    public DelClientTask(long xid, long timeout, SdwnClient client, SdwnAccessPoint ap) {
-        super(xid, timeout);
+
+    public DelClientContext(long xid, SdwnClient client, SdwnAccessPoint ap) {
+        super(xid);
         this.client = client;
         this.ap = ap;
     }

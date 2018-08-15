@@ -5,11 +5,17 @@ import org.onlab.packet.MacAddress;
 
 public abstract class Sdwn80211MgmtFrameListenerAdapter implements Sdwn80211MgmtFrameListener {
     @Override
-    public void receivedProbeRequest(MacAddress staMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {}
+    public ResponseAction receivedProbeRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        return ResponseAction.NONE;
+    }
 
     @Override
-    public void receivedAuthRequest(MacAddress staMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {}
+    public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        return ResponseAction.NONE;
+    }
 
     @Override
-    public void receivedAssocRequest(MacAddress staMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {}
+    public ResponseAction receivedAssocRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        return ResponseAction.NONE;
+    }
 }

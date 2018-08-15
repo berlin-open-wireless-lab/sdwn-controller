@@ -10,10 +10,13 @@ import java.net.MalformedURLException;
 @Command(scope = "sdwn", name = "openwifi-unregister", description = "Unregister an SDWN controller from OpenWifi")
 public class UnregisterCommand extends AbstractShellCommand {
 
-    @Argument(name = "URL", description = "OpenWifi server", valueToShowInHelp = "http://1.2.3.4:5678/path/to/openwifi/rest/api/root")
+    @Argument(index = 0, name = "URL", description = "OpenWifi server", valueToShowInHelp = "https://1.2.3.4:5678/path/to/openwifi/rest/api/root")
     private String url = null;
 
-    @Argument(index = 1, name = "ID", description = "OpenWifi service ID")
+    @Argument(index = 1, name = "API_KEY", description = "OpenWifi API key")
+    private String apiKey = null;
+
+    @Argument(index = 2, name = "ID", description = "OpenWifi service ID")
     private String id = null;
 
     @Override
@@ -28,7 +31,7 @@ public class UnregisterCommand extends AbstractShellCommand {
             } else if (id == null) {
                 success = service.unregister(url);
             } else {
-                success = service.unregister(url, id);
+                success = service.unregister(url, apiKey, id);
             }
 
             if (!success) {
