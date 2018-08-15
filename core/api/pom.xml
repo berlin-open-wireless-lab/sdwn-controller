@@ -34,7 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>org.onosproject</groupId>
-            <artifactId>onos-of-api</artifactId>
+            <artifactId>onos-protocols-openflow-api</artifactId>
             <version>${onos.version}</version>
         </dependency>
     </dependencies>
