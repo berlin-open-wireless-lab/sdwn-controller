@@ -37,6 +37,11 @@
             <artifactId>onos-protocols-openflow-api</artifactId>
             <version>${onos.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.onosproject</groupId>
+            <artifactId>openflowj</artifactId>
+            <version>3.2.2.onos-sdwn-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
