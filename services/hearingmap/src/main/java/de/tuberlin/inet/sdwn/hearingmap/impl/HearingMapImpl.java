@@ -125,7 +125,7 @@ public class HearingMapImpl implements SdwnHearingMap {
         }
 
         if (map.size() == 1) {
-            cleanupTask = Timer.getTimer().newTimeout(new CleanUpTask(), TIMEOUT, TimeUnit.SECONDS);
+            cleanupTask = Timer.newTimeout(new CleanUpTask(), TIMEOUT, TimeUnit.SECONDS);
         }
     }
 
@@ -222,7 +222,7 @@ public class HearingMapImpl implements SdwnHearingMap {
             toRemove.forEach(map::remove);
 
             if (!map.isEmpty()) {
-                cleanupTask = Timer.getTimer().newTimeout(new CleanUpTask(), TIMEOUT, TimeUnit.SECONDS);
+                cleanupTask = Timer.newTimeout(new CleanUpTask(), TIMEOUT, TimeUnit.SECONDS);
             }
         }
     }
