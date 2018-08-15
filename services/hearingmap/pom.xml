@@ -30,7 +30,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <onos.version>1.10.0-SNAPSHOT</onos.version>
+        <onos.version>1.14.0-SNAPSHOT</onos.version>
         <onos.app.name>de.tuberlin.inet.sdwn.hearingmap</onos.app.name>
         <onos.app.title>Simple Client Hearing Map</onos.app.title>
         <onos.app.origin>TU Berlin INET</onos.app.origin>
