@@ -18,13 +18,17 @@ public class Ieee80211HtCapability {
     private final Set<IeeeHtCapabilityInfo> capInfo;
     private final int maxRxAmpduLen;
     private final float minRxAmpduSpacing;
-    private final OFIeee80211McsInfo mcs;
+    private final byte[] mcsRxMask;
+    private final int mcsRxHighest;
+    private final short mcsTxParams;
 
-    private Ieee80211HtCapability(int maxRxAmpduLen, float minRxAmpduSpacing, Set<IeeeHtCapabilityInfo> capInfo, OFIeee80211McsInfo mcs) {
+    private Ieee80211HtCapability(int maxRxAmpduLen, float minRxAmpduSpacing, Set<IeeeHtCapabilityInfo> capInfo, byte[] mcsRxMask, int mcsRxHighest, short mcsTxParams) {
         this.capInfo = capInfo;
         this.maxRxAmpduLen = maxRxAmpduLen;
         this.minRxAmpduSpacing = minRxAmpduSpacing;
-        this.mcs = mcs;
+        this.mcsRxMask = mcsRxMask;
+        this.mcsRxHighest = mcsRxHighest;
+        this.mcsTxParams = mcsTxParams;
     }
 
     public Set<IeeeHtCapabilityInfo> getCapInfo() {
@@ -39,8 +43,16 @@ public class Ieee80211HtCapability {
         return minRxAmpduSpacing;
     }
 
-    public OFIeee80211McsInfo getMcs() {
-        return mcs;
+    public byte[] getMcsRxMask() {
+        return mcsRxMask;
+    }
+
+    public int getMcsRxHighest() {
+        return mcsRxHighest;
+    }
+
+    public short getMcsTxParams() {
+        return mcsTxParams;
     }
 
     public static Ieee80211HtCapability fromOF(OFIeee80211HtCap ofHtCap) throws SdwnEntityParsingException {
@@ -55,9 +67,7 @@ public class Ieee80211HtCapability {
             throw new IeeeHtCapabilityParsingException("Invalid Minimum MPDU Start Spacing", ofHtCap);
         }
 
-        // TODO: process MCS
-
-        return new Ieee80211HtCapability(maxRxAmpduLen, minRxAmpduSpacing, fromInt(ofHtCap.getCapInfo()), ofHtCap.getMcs());
+        return new Ieee80211HtCapability(maxRxAmpduLen, minRxAmpduSpacing, fromInt(ofHtCap.getCapInfo()), ofHtCap.getMcs().getRxMask().getMask(), ofHtCap.getMcs().getRxHighest(), ofHtCap.getMcs().getTxParams());
     }
 
     public static Set<IeeeHtCapabilityInfo> fromInt(int capInfo) {

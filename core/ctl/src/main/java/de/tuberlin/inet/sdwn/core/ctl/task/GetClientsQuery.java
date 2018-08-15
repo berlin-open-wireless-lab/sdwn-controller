@@ -1,60 +1,75 @@
 package de.tuberlin.inet.sdwn.core.ctl.task;
 
-import de.tuberlin.inet.sdwn.core.api.SdwnTransactionContext;
+import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
-import de.tuberlin.inet.sdwn.core.api.DefaultSdwnTransactionContext;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
 import org.onosproject.openflow.controller.Dpid;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsReply;
+import org.projectfloodlight.openflow.protocol.OFSdwnGetClientsRequest;
 import org.projectfloodlight.openflow.protocol.OFStatsReplyFlags;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.slf4j.Logger;
 
-public class GetClientsQuery extends DefaultSdwnTransactionContext {
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.CONTINUE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.DONE;
+import static de.tuberlin.inet.sdwn.core.api.SdwnTransactionStatus.SKIP;
+import static org.slf4j.LoggerFactory.getLogger;
+
+public class GetClientsQuery extends SdwnTransactionAdapter {
 
     private final Dpid dpid;
-    private final String ap;
+    private final SdwnAccessPoint ap;
+    private SdwnCoreService controller;
+    private final long timeout;
 
-    public GetClientsQuery(long xid, String ap, Dpid dpid) {
-        super(xid);
+    private final Logger log = getLogger(getClass());
+
+    public GetClientsQuery(SdwnAccessPoint ap, Dpid dpid, SdwnCoreService controller, long timeout) {
         this.ap = ap;
         this.dpid = dpid;
-    }
-
-    public GetClientsQuery(long xid, String ap, Dpid dpid,
-                           SdwnTransactionContext followUpTask) {
-        super(xid, followUpTask);
-        this.ap = ap;
-        this.dpid = dpid;
+        this.controller = controller;
+        this.timeout = timeout;
     }
 
     @Override
-    public TransactionStatus update(Dpid dpid, OFMessage msg) {
+    public long timeout() {
+        return timeout;
+    }
+
+    @Override
+    public void start(long xid) {
+        OFSdwnGetClientsRequest getClientsMsg = controller.getSwitch(dpid).factory().buildSdwnGetClientsRequest()
+                .setXid(xid)
+                .setIfNo(OFPort.of(ap.portNumber()))
+                .build();
+
+        controller.sendMessage(dpid, getClientsMsg);
+    }
+
+    @Override
+    public SdwnTransactionStatus update(Dpid dpid, OFMessage msg) {
 
         if (!(msg instanceof OFSdwnGetClientsReply)) {
-            return SdwnTransactionContext.TransactionStatus.SKIP;
+            return SKIP;
         }
 
         OFSdwnGetClientsReply reply = (OFSdwnGetClientsReply) msg;
-
-        SdwnAccessPoint ap = transactionManager.controller().apByDpidAndName(dpid, this.ap);
-        if (ap == null) {
-            return SdwnTransactionContext.TransactionStatus.DONE;
-        }
-
         SdwnClient newClient = Client.fromGetClientsReply(ap, reply);
         if (newClient == null) {
-            return SdwnTransactionContext.TransactionStatus.DONE;
+            return DONE;
         }
 
-        transactionManager.controller().newClient(ap, newClient);
+        controller.newClient(ap, newClient);
         boolean done = !reply.getFlags().contains(OFStatsReplyFlags.REPLY_MORE);
-        return done ? SdwnTransactionContext.TransactionStatus.DONE : SdwnTransactionContext.TransactionStatus.CONTINUE;
+        return done ? DONE : CONTINUE;
     }
 
     @Override
-    public void timeout() {
-        log.info("Get Stations Query for AP {} on {} timed out. This could just mean that the AP does not have any associated clients. There is no explicit signalling for that case, yet.",
-                ap, dpid);
+    public void timedOut() {
+        log.info("Time-out at [{}]:{}. Probably because there are no associated clients.", dpid, ap.name());
     }
 }

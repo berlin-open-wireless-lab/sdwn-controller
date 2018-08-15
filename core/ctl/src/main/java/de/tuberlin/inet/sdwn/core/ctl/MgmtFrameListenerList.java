@@ -24,6 +24,8 @@ public class MgmtFrameListenerList {
                     throw new IllegalArgumentException(String.format("Listener with priority %d already registered", priority));
                 }
             }
+
+            list.add(entry);
         }
     }
 

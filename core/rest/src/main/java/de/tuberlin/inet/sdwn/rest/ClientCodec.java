@@ -54,7 +54,10 @@ public class ClientCodec extends JsonCodec<SdwnClient> {
                     .put("bssid", client.ap().bssid().toString())
                     .put("association_id", client.assocId());
             objNode.set("capabilities", buildCapabilities(client.capabilities(), context));
-            // TODO: HT/VHT capabilities
+            if (client.htCapabilities() != null) {
+                objNode.set("ht_capabilities", buildHtCapabilities(client.htCapabilities(), context));
+            }
+            // TODO: VHT capabilities
         });
         return array;
     }

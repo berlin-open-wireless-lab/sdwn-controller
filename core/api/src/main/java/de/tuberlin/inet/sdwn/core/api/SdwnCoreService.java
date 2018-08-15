@@ -5,6 +5,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
+import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 
 import java.util.NoSuchElementException;
@@ -70,13 +71,38 @@ public interface SdwnCoreService {
     boolean addClientToAp(SdwnAccessPoint dstAp, SdwnClient client);
 
     /**
-     * Send an Delete Client message to the switch hosting the client's AP.
+     * Ban a client from associating with an AP for a given time.
+     *
+     * @param ap the AP from which the client is to be banned
+     * @param mac the client's MAC address
+     * @param banTime the ban time in ms
+     */
+    void blacklistClientAtAp(SdwnAccessPoint ap, MacAddress mac, long banTime);
+
+    /**
+     * Lift a client's ban at an AP.
+     */
+    void clearClientBlacklistingAtAp(SdwnAccessPoint ap, MacAddress mac);
+
+    /**
+     * Send a Delete Client message to the switch hosting the client's AP.
      *
      * @param mac the client's MAC address
      * @param banTime time the client will be banned from re-association (in ms)
      * @return true on success, false otherwise
      */
     boolean removeClientFromAp(MacAddress mac, long banTime);
+
+    /**
+     * Send an OpenFlow message to a switch
+     *
+     * @param dpid the switch's datapath ID
+     * @param msg the message
+     * @return true on success, false on failure
+     */
+    boolean sendMessage(Dpid dpid, OFMessage msg);
+
+    OpenFlowWirelessSwitch getSwitch(Dpid dpid);
 
     /**
      * Remove all state related to the given client from the controller. This
@@ -99,12 +125,11 @@ public interface SdwnCoreService {
      * Announcement.
      *
      * @param dpid the Datapath ID of the switch where the AP is located
-     * @param ifNo the AP's port number
-     * @param freq the target hz
+     * @param apName the AP
+     * @param freq the target frequency in Hz
      * @param beaconCount the number of beacon frames after which the channel will be switched
-     * @return true on success, false otherwise
      */
-    boolean setChannel(Dpid dpid, int ifNo, int freq, int beaconCount);
+    void setChannel(Dpid dpid, String apName, int freq, int beaconCount);
 
     boolean registerClientAuthenticator(SdwnClientAuthenticatorService authenticator);
 
@@ -145,7 +170,7 @@ public interface SdwnCoreService {
      * @param listener the listener
      * @throws IllegalArgumentException
      */
-    void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException;
+    void register80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException;
 
     /**
      * Un-register the given {@code Sdwn80211MgmtFrameListener}.
@@ -159,7 +184,22 @@ public interface SdwnCoreService {
      * @param t the transaction
      * @return the XID
      */
-    long startTransaction(SdwnTransactionContext t, long timeout);
+    long startTransaction(SdwnTransaction t);
+
+    /**
+     * Abort an ongoing transaction with the given XID.
+     *
+     * @param xid the transaction's XID
+     */
+    void abortTransaction(long xid);
+
+    /**
+     * Start the given transaction chain.
+     *
+     * @param c the transaction chain
+     * @return the XID for all the chain's transactions
+     */
+    long startTransactionChain(SdwnTransactionChain c);
 
     SdwnClient createClientFromJson(ObjectNode node);
 

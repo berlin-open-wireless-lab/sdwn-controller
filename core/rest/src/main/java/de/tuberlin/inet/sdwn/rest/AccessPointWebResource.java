@@ -128,7 +128,7 @@ public class AccessPointWebResource extends AbstractWebResource {
                 throw new IllegalArgumentException(String.format("%s is not an AP on %s or the switch does not exist.", apName, dpid));
             }
 
-            service.setChannel(dpid, ap.portNumber(), freq, tree.get("beacon_count").asInt(1));
+            service.setChannel(dpid, ap.name(), freq, tree.get("beacon_count").asInt(1));
 
             return ok(mapper().createObjectNode().put("hz", freq).put("channel", channel)).build();
         } catch (IOException e) {

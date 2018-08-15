@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import de.tuberlin.inet.sdwn.core.api.*;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
+import de.tuberlin.inet.sdwn.core.api.SdwnTransactionChain;
 import de.tuberlin.inet.sdwn.mobilitymanager.SdwnMobilityManager;
 import org.apache.felix.scr.annotations.*;
 import org.onlab.packet.MacAddress;
@@ -32,7 +33,7 @@ public class MobilityManager implements SdwnMobilityManager {
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     private SdwnCoreService controller;
 
-    private InternalMgmtFrameListener mgmtFrameListener = new InternalMgmtFrameListener();
+    private Sdwn80211MgmtFrameListener mgmtFrameListener = new InternalMgmtFrameListener();
 
     private static final String MOBILITY_MANAGER_80211_MGMT_PRIORITY = "mobilityManagerMgmtFramePrio";
     private static final int DEFAULT_MOBILITY_MANAGER_80211_MGMT_PRIORITY = 99;
@@ -42,21 +43,21 @@ public class MobilityManager implements SdwnMobilityManager {
     private int mobilityManagerMgmtFramePrio = DEFAULT_MOBILITY_MANAGER_80211_MGMT_PRIORITY;
 
     private static final String MOBILITY_MANAGER_HANDOVER_TIMEOUT = "mobilityManagerHandoverTimeout";
-    private static final int DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT = 5000;
+    private static final int DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT = 10000;
 
     @Property(name = MOBILITY_MANAGER_HANDOVER_TIMEOUT, longValue = DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT,
             label = "Handover transaction timeout in milliseconds")
     private long mobilityManagerHandoverTimeout = DEFAULT_MOBILITY_MANAGER_HANDOVER_TIMEOUT;
 
-    private InternalClientListener clientListener = new InternalClientListener();
-    private InternalSwitchListener switchListener = new InternalSwitchListener();
-    private Map<MacAddress, HandoverTransactionContext> ongoingHandovers = new ConcurrentHashMap<>();
+    private SdwnClientListener clientListener = new InternalClientListener();
+    private SdwnSwitchListener switchListener = new InternalSwitchListener();
+    private Map<MacAddress, HandoverTransactionAddClient> ongoingHandovers = new ConcurrentHashMap<>();
 
     @Activate
     public void activate() {
         controller.registerClientListener(clientListener);
         controller.registerSwitchListener(switchListener);
-        controller.register80211MgtmFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
+        controller.register80211MgmtFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
         log.info("Started");
     }
 
@@ -76,7 +77,7 @@ public class MobilityManager implements SdwnMobilityManager {
         if (!Strings.isNullOrEmpty(updatedConfig)) {
             mobilityManagerMgmtFramePrio = Integer.valueOf(updatedConfig);
             controller.remove80211MgmtFrameListener(mgmtFrameListener);
-            controller.register80211MgtmFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
+            controller.register80211MgmtFrameListener(mgmtFrameListener, mobilityManagerMgmtFramePrio);
             log.info("Mobility Manager priority for handling 802.11 management frames set to {}", updatedConfig);
         }
         updatedConfig = Tools.get(properties, MOBILITY_MANAGER_HANDOVER_TIMEOUT);
@@ -101,17 +102,28 @@ public class MobilityManager implements SdwnMobilityManager {
         checkNotNull(dst);
 
         if (c.ap().equals(dst)) {
-            log.error("Aborting handover of {} to {}:{}: client is already associated with that AP.", c.macAddress(), dst.nic().switchID(), dst.name());
+            log.error("Aborting handover. {} -> [{}]:{}: already associated with that AP.", c.macAddress(), dst.nic().switchID(), dst.name());
             return;
         }
 
-        log.info("Starting handover of {} to {}:{}", c.macAddress(), dst.nic().switchID(), dst.name());
+        log.info("Starting handover: {}: [{}]:{} -> [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name(), dst.nic().switchID(), dst.name());
 
-        HandoverTransactionContext handover = new HandoverTransactionContext(dst, c);
-        controller.startTransaction(handover, timeout);
-        ongoingHandovers.put(c.macAddress(), handover);
+        HandoverTransactionDelClient delClientTransaction = new HandoverTransactionDelClient(c, this, controller, timeout);
+        HandoverTransactionAddClient addClientTransaction = new HandoverTransactionAddClient(dst, c, this, controller, timeout);
+
+        SdwnTransactionChain transactionChain = new SdwnTransactionChain(delClientTransaction)
+                .append(addClientTransaction);
+
+        controller.startTransactionChain(transactionChain);
+        ongoingHandovers.put(c.macAddress(), addClientTransaction);
     }
 
+
+    @Override
+    public void abortHandover(SdwnClient c) {
+        checkNotNull(c);
+        ongoingHandovers.remove(c.macAddress());
+    }
 
     private final class InternalClientListener implements SdwnClientListener {
 
@@ -119,16 +131,17 @@ public class MobilityManager implements SdwnMobilityManager {
         public void clientAssociated(SdwnClient c) {
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(c.ap())) {
-                    log.info("Handover finished. {} is now associated with {}:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
+                    log.info("Handover finished. {} is now associated with [{}]:{}", c.macAddress(), c.ap().nic().switchID(), c.ap().name());
                 }
             }
         }
 
         @Override
         public void clientDisassociated(SdwnClient c, SdwnAccessPoint fromAp) {
+            log.info("client {} disassociated from [{}]:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
             if (ongoingHandovers.containsKey(c.macAddress())) {
                 if (ongoingHandovers.get(c.macAddress()).dst().equals(fromAp)) {
-                    log.info("Handover started. {} disassociated from {}:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
+                    log.info("Handover started. {} disassociated from [{}]:{}", c.macAddress(), fromAp.nic().switchID(), fromAp.name());
                 }
             }
         }
@@ -156,11 +169,11 @@ public class MobilityManager implements SdwnMobilityManager {
     private final class InternalMgmtFrameListener extends Sdwn80211MgmtFrameListenerAdapter {
 
         @Override
-        public ResponseAction receivedAuthRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
+        public ResponseAction receivedAuthRequest(MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             if (ongoingHandovers.containsKey(clientMac)) {
-                HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
+                HandoverTransactionAddClient ctx = ongoingHandovers.get(clientMac);
 
-                if (ctx.client().ap().equals(atAP)) {
+                if (ctx.dst().equals(atAP)) {
                     return ResponseAction.GRANT;
                 } else {
                     return ResponseAction.DENY;
@@ -173,9 +186,9 @@ public class MobilityManager implements SdwnMobilityManager {
         @Override
         public ResponseAction receivedAssocRequest(org.onlab.packet.MacAddress clientMac, SdwnAccessPoint atAP, long xid, long rssi, long freq) {
             if (ongoingHandovers.containsKey(clientMac)) {
-                HandoverTransactionContext ctx = ongoingHandovers.get(clientMac);
+                HandoverTransactionAddClient ctx = ongoingHandovers.get(clientMac);
 
-                if (ctx.client().ap().equals(atAP)) {
+                if (ctx.dst().equals(atAP)) {
                     return ResponseAction.GRANT;
                 } else {
                     return ResponseAction.DENY;

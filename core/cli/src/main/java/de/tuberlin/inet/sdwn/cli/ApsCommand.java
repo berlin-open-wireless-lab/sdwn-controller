@@ -69,8 +69,8 @@ public class ApsCommand extends AbstractShellCommand {
                         print("\t- SSID: %s", ap.ssid());
                         print("\t- Frequency: %1.3fGhz (channel %d)", (double) ap.frequency().hz() / 1000.0,
                               Ieee80211Channels.frequencyToChannel((int) ap.frequency().hz()));
-                        print("\t- Clients:");
-                        ap.clients().forEach(sta -> print("\t\t- %s (Assoc ID %d)", sta.macAddress(), sta.assocId()));
+                        print("\t- Clients: %d", ap.clients().size());
+                        ap.clients().forEach(client -> print("\t\t- Assoc ID %d: %s", client.assocId(), client.macAddress()));
                     });
                 });
     }

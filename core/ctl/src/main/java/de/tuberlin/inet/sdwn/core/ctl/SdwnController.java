@@ -19,17 +19,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import de.tuberlin.inet.sdwn.core.api.*;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequency;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequencyBand;
+import de.tuberlin.inet.sdwn.core.api.entity.*;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Client;
 import de.tuberlin.inet.sdwn.core.ctl.entity.ClientCryptoKeys;
 import de.tuberlin.inet.sdwn.core.ctl.entity.Nic;
-import de.tuberlin.inet.sdwn.core.ctl.task.AddClientContext;
-import de.tuberlin.inet.sdwn.core.ctl.task.DelClientContext;
+import de.tuberlin.inet.sdwn.core.ctl.task.AddClientTransaction;
+import de.tuberlin.inet.sdwn.core.ctl.task.DelClientTransaction;
 import de.tuberlin.inet.sdwn.core.ctl.task.GetClientsQuery;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
-import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
+import de.tuberlin.inet.sdwn.core.ctl.task.SetChannelTransaction;
 import io.netty.util.internal.ConcurrentSet;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -88,7 +85,7 @@ import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -123,7 +120,7 @@ public class SdwnController implements SdwnCoreService {
 
     private ApplicationId appId;
 
-    private InternalSwitchListener switchListener = new InternalSwitchListener();
+    private InternalSwitchListener switchListener = new InternalSwitchListener(this);
     private InternalSdwnMessageListener msgListener = new InternalSdwnMessageListener();
     private InternalHostProvider hostProvider = new InternalHostProvider();
 
@@ -135,7 +132,7 @@ public class SdwnController implements SdwnCoreService {
     private long transactionTimeout = DEFAULT_TRANSACTION_TIMEOUT;
 
     private XidGenerator xidGen = XidGenerators.create();
-    protected SdwnTransactionManager transactionManager = new DefaultSdwnTransactionManager(this);
+    private TransactionManager transactionManager = new TransactionManager(xidGen);
 
     protected Map<SdwnAccessPoint, Set<MacAddress>> denyMap = new ConcurrentHashMap<>();
     protected Set<SdwnSwitchListener> switchListeners = new ConcurrentSet<>();
@@ -246,7 +243,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public void register80211MgtmFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
+    public void register80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
         mgmtFrameListeners.addListener(listener, priority);
     }
 
@@ -285,6 +282,17 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
+    public OpenFlowWirelessSwitch getSwitch(Dpid dpid) {
+        checkNotNull(dpid);
+        OpenFlowSwitch sw = controller.getSwitch(dpid);
+
+        if (sw == null || !(sw instanceof OpenFlowWirelessSwitch)) {
+            return null;
+        }
+        return (OpenFlowWirelessSwitch) sw;
+    }
+
+    @Override
     public void newClient(SdwnAccessPoint atAp, SdwnClient client) {
         if (atAp == null || client == null) {
             return;
@@ -307,6 +315,39 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
+    public void blacklistClientAtAp(SdwnAccessPoint ap, MacAddress mac, long banTime) {
+        checkNotNull(ap);
+        checkNotNull(mac);
+        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        checkNotNull(sw);
+
+        sw.sendMsg(sw.factory().buildSdwnBlacklistClient()
+                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(mac.toBytes()))
+                .setBanTime(banTime < 0 ? 0 : banTime > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) banTime)
+                .setIfNo(OFPort.of(ap.portNumber()))
+                .build()
+        );
+
+        ap.blacklistClient(mac);
+    }
+
+    @Override
+    public void clearClientBlacklistingAtAp(SdwnAccessPoint ap, MacAddress mac) {
+        checkNotNull(ap);
+        checkNotNull(mac);
+        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        checkNotNull(sw);
+
+        sw.sendMsg(sw.factory().buildSdwnBlacklistClient()
+                .setIfNo(OFPort.of(ap.portNumber()))
+                .setBanTime(0)
+                .setClient(org.projectfloodlight.openflow.types.MacAddress.of(mac.toBytes()))
+                .build());
+
+        ap.clearClientBlacklisting(mac);
+    }
+
+    @Override
     public boolean removeClientFromAp(MacAddress clientMac, long banTime) {
         SdwnClient client = store.getClient(clientMac);
         if (client == null) {
@@ -314,69 +355,64 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        long xid = xidGen.nextXid();
+        transactionManager.startTransaction(new DelClientTransaction(client, client.ap(), banTime, this, 5000));
+        return true;
+    }
 
-        if (!sendDelClient(client.ap(), client, 1, true, banTime, xid)) {
+    @Override
+    public boolean sendMessage(Dpid dpid, OFMessage msg) {
+        checkNotNull(dpid);
+        checkNotNull(msg);
+
+        OpenFlowSwitch ofsw = controller.getSwitch(dpid);
+
+        if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+            log.error("Could not send message to {}: Not found or not connected", dpid);
             return false;
         }
 
-        transactionManager.startTransaction(new DelClientContext(xid, client, client.ap()), 5000);
+        ofsw.sendMsg(msg);
         return true;
     }
 
     @Override
     public void removeClient(SdwnClient client) {
+        log.info("{} disconnected from [{}]:{}", client.macAddress(), client.ap().nic().switchID(), client.ap().name());
+
+        SdwnAccessPoint ap = client.ap();
         client.disassoc();
+        clientListeners.forEach(l -> l.clientDisassociated(client, ap));
+        store.removeClient(client.macAddress());
+        hostProviderService.hostVanished(hostId(client.macAddress()));
+
     }
 
     @Override
-    public boolean setChannel(Dpid dpid, int ifNo, int freq, int beaconCount) {
-        OpenFlowWirelessSwitch sw = wirelessSwitchForDpid(dpid);
-        if (sw == null) {
-            log.error("Unknown switch: {}", dpid);
-            return false;
+    public void setChannel(Dpid dpid, String apName, int freq, int beaconCount) {
+
+        SdwnAccessPoint ap = store.apByDpidAndName(dpid, apName);
+
+        if (ap == null) {
+            log.error("[{}]:{} not known", dpid, apName);
+            return;
         }
 
-        boolean supported = false;
-        for (SdwnNic nic : store.nicsForSwitch(dpid)) {
-            if (nic.supportsFrequency(freq)) {
-                supported = true;
-                break;
-            }
-        }
-
-        if (!supported) {
-            log.error("{} does not support {} GHz", dpid,
-                    String.format("%1.3f", (double) freq / 1000.0));
-            return false;
-        }
-
-        OFSdwnSetChannel cmd = sw.factory().buildSdwnSetChannel()
-                .setXid(xidGen.nextXid())
-                .setIfNo(OFPort.of(ifNo))
-                .setFrequency(freq)
-                .setBeaconCount(beaconCount)
-                .build();
-
-        sw.sendMsg(cmd);
-        return true;
+        startTransaction(new SetChannelTransaction(dpid, ap, this, freq, beaconCount, 5000));
     }
 
     @Override
-    public long startTransaction(SdwnTransactionContext t, long timeout) {
-        long xid;
+    public long startTransaction(SdwnTransaction t) {
+        return transactionManager.startTransaction(t);
+    }
 
-        if (t.xid() == SdwnTransactionContext.NO_XID) {
-            xid = xidGen.nextXid();
-            t.setXid(xid);
-        } else {
-            xid = t.xid();
-        }
+    @Override
+    public long startTransactionChain(SdwnTransactionChain c) {
+        return transactionManager.startTransactionChain(c);
+    }
 
-        log.info("Starting transaction {} (xid {})", t, xid);
-
-        transactionManager.startTransaction(t, timeout);
-        return xid;
+    @Override
+    public void abortTransaction(long xid) {
+        transactionManager.abortTransaction(xid);
     }
 
     private void send80211MgmtReply(MacAddress client, SdwnAccessPoint ap, long xid, boolean denied) {
@@ -431,6 +467,12 @@ public class SdwnController implements SdwnCoreService {
 
     private class InternalSwitchListener implements OpenFlowSwitchListener {
 
+        SdwnCoreService sdwnController;
+
+        InternalSwitchListener(SdwnCoreService controller) {
+            sdwnController = controller;
+        }
+
         @Override
         public void switchAdded(Dpid dpid) {
             OpenFlowSwitch ofsw = controller.getSwitch(dpid);
@@ -448,32 +490,20 @@ public class SdwnController implements SdwnCoreService {
                     .map(nicEntity -> Nic.fromOF(dpid, nicEntity, sw.sdwnEntities()))
                     .collect(Collectors.toList());
 
-            log.info("NICS: {}", sw.nicEntities());
+            log.info("NICs: {}", sw.nicEntities());
 
             store.putNics(nics);
 
-            List<OFMessage> getClientsMsgs = new LinkedList<>();
             for (SdwnNic nic : nics) {
                 nic.aps().forEach(ap -> {
                     store.putAp(ap, nic);
-                    OFSdwnGetClientsRequest msg = buildGetClientsMessage(sw, ap);
-                    getClientsMsgs.add(msg);
-                    transactionManager.startTransaction(new GetClientsQuery(msg.getXid(), ap.name(), dpid), 5000);
+                    transactionManager.startTransaction(new GetClientsQuery(ap, dpid, sdwnController, 5000));
+
                 });
             }
 
-            log.info("Sending {}", getClientsMsgs);
-            sw.sendMsg(getClientsMsgs);
-
             // notify switch listeners
             switchListeners.forEach(listener -> listener.switchConnected(dpid));
-        }
-
-        private OFSdwnGetClientsRequest buildGetClientsMessage(OpenFlowWirelessSwitch sw, SdwnAccessPoint ap) {
-            return sw.factory().buildSdwnGetClientsRequest()
-                    .setIfNo(OFPort.of(ap.portNumber()))
-                    .setXid(xidGen.nextXid())
-                    .build();
         }
 
         @Override
@@ -591,7 +621,7 @@ public class SdwnController implements SdwnCoreService {
             cmdBuilder.setKeys(ClientCryptoKeys.toOF(client.keys(), sw.factory()));
         }
 
-        transactionManager.startTransaction(new AddClientContext(xidGen.nextXid(), client, ap), 3000);
+        transactionManager.startTransaction(new AddClientTransaction(client, ap, 3000));
         log.info("Sending {}", cmdBuilder.build());
         sw.sendMsg(cmdBuilder.build());
         return true;
@@ -695,6 +725,8 @@ public class SdwnController implements SdwnCoreService {
 
     private class InternalSdwnMessageListener implements OpenFlowMessageListener {
 
+        private ExecutorService msgHandlers = Executors.newCachedThreadPool();
+
         private boolean isSdwnMsg(OFMessage msg) {
             return (msg instanceof OFSdwnHeader || msg instanceof OFSdwnReply);
         }
@@ -706,57 +738,16 @@ public class SdwnController implements SdwnCoreService {
             }
 
             if (ofMessage instanceof OFSdwnIeee80211Mgmt) {
-                handleMgmtFrame(dpid, (OFSdwnIeee80211Mgmt) ofMessage);
+                msgHandlers.execute(() -> handleMgmtFrame(dpid, (OFSdwnIeee80211Mgmt) ofMessage));
+            } else if (transactionManager.isOngoing(ofMessage.getXid())) {
+                msgHandlers.execute(() -> transactionManager.msgReceived(dpid, ofMessage));
             } else if (ofMessage instanceof OFSdwnAddClient) {
-                handleAddClientNotification(dpid, (OFSdwnAddClient) ofMessage);
+                msgHandlers.execute(() -> handleAddClientNotification(dpid, (OFSdwnAddClient) ofMessage));
             } else if (ofMessage instanceof OFSdwnDelClient) {
-                handleDelClientNotification(dpid, (OFSdwnDelClient) ofMessage);
-            } else if (ofMessage instanceof OFSdwnGetClientsReply) {
-                transactionManager.msgReceived(dpid, ofMessage);
-            } else if (ofMessage instanceof OFSdwnSetChannel) {
-                handleSetChannelNotification(dpid, (OFSdwnSetChannel) ofMessage);
+                msgHandlers.execute(() -> handleDelClientNotification(dpid, (OFSdwnDelClient) ofMessage));
             }
         }
 
-        private void handleSetChannelNotification(Dpid dpid, OFSdwnSetChannel msg) {
-            SdwnNic apNic = store.nicsForSwitch(dpid).stream()
-                    .filter(nic -> !nic.aps().stream()
-                            .filter(ap -> ap.portNumber() == msg.getIfNo().getPortNumber())
-                            .collect(Collectors.toList()).isEmpty())
-                    .findFirst().orElse(null);
-            if (apNic == null) {
-                return;
-            }
-
-            for (SdwnAccessPoint ap : apNic.aps()) {
-                if (ap.portNumber() != msg.getIfNo().getPortNumber()) {
-                    continue;
-                }
-
-                SdwnFrequency freq = null;
-                for (SdwnFrequencyBand band : apNic.bands()) {
-                    if (band.containsFrequency(msg.getFrequency())) {
-                        freq = band.frequencies().stream()
-                                .filter(f -> f.hz() == msg.getFrequency())
-                                .findFirst().orElse(null);
-                        break;
-                    }
-                }
-
-                if (freq == null) {
-                    log.error("Set channel notification reports hz unsupported by NIC: {} MHz", msg.getFrequency());
-                    return;
-                }
-
-                ap.setFrequency(freq);
-                log.info("AP {} on {} is now operating at {} GHz (channel {})",
-                        ap.name(), dpid, String.format("%1.3f", (double) msg.getFrequency() / 1000.0),
-                        Ieee80211Channels.frequencyToChannel(msg.getFrequency()));
-                return;
-            }
-        }
-
-        // TODO: use thread pool for message handling
         // TODO: client authenticator needs to handle AUTH and ASSOC frames
         private void handleMgmtFrame(Dpid dpid, OFSdwnIeee80211Mgmt msg) {
             SdwnAccessPoint ap = ifNoToAp(dpid, msg.getIfNo().getPortNumber());
@@ -779,11 +770,6 @@ public class SdwnController implements SdwnCoreService {
                             lastPriority = e.priority;
                         }
                     }
-
-                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
-                    }
-
                     break;
                 case AUTH:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
@@ -795,11 +781,6 @@ public class SdwnController implements SdwnCoreService {
                             lastPriority = e.priority;
                         }
                     }
-
-                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
-                    }
-
                     break;
                 case PROBE:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
@@ -811,12 +792,13 @@ public class SdwnController implements SdwnCoreService {
                             lastPriority = e.priority;
                         }
                     }
-
-                    if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
-                        send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse == Sdwn80211MgmtFrameListener.ResponseAction.DENY);
-                    }
-
                     break;
+            }
+
+            if (lastResponse != Sdwn80211MgmtFrameListener.ResponseAction.NONE) {
+                log.info("{}ing {} request by {} at [{}]:{}", lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY) ? "Deny" : "Grant",
+                        msg.getIeee80211Type(), msg.getAddr(), dpid, ap.name());
+                send80211MgmtReply(MacAddress.valueOf(msg.getAddr().getBytes()), ap, msg.getXid(), lastResponse.equals(Sdwn80211MgmtFrameListener.ResponseAction.DENY));
             }
         }
 
@@ -832,14 +814,7 @@ public class SdwnController implements SdwnCoreService {
         }
 
         private void handleAddClientNotification(Dpid dpid, OFSdwnAddClient msg) {
-            SdwnAccessPoint ap = null;
-            for (SdwnNic nic : store.nicsForSwitch(dpid)) {
-                if ((ap = nic.aps().stream()
-                        .filter(a -> a.portNumber() == msg.getAp().getPortNumber())
-                        .findFirst().orElse(null)) != null) {
-                    break;
-                }
-            }
+            SdwnAccessPoint ap = ifNoToAp(dpid, msg.getAp().getPortNumber());
 
             if (ap == null) {
                 log.error("No Access Point with number {} known on {}", msg.getAp().getPortNumber(), dpid);
@@ -847,14 +822,11 @@ public class SdwnController implements SdwnCoreService {
             }
 
             SdwnClient client = Client.fromAddClient(ap, msg);
-            log.info("New Client at AP {} on {}: {}", ap.name(), dpid, client);
-
             store.addClient(client, ap);
             clientListeners.forEach(l -> l.clientAssociated(client));
             // FIXME! hostapd on the agent does not have HT/VHT capabilities at this time
             //       send get client request to fetch capabilities/(V)HT capabilities. Needs new SdwnTransactionContext
             publishHostForClient(client);
-            transactionManager.msgReceived(dpid, msg);
         }
 
         private void handleDelClientNotification(Dpid dpid, OFSdwnDelClient msg) {
@@ -868,14 +840,7 @@ public class SdwnController implements SdwnCoreService {
                 store.removeClient(client.macAddress());
             }
 
-            log.info("Client {} disconnected from AP {} on {}", client.macAddress(), client.ap(), dpid);
-
-            SdwnAccessPoint ap = client.ap();
-            client.disassoc();
-            clientListeners.forEach(l -> l.clientDisassociated(client, ap));
-            store.removeClient(client.macAddress());
-            hostProviderService.hostVanished(hostId(client.macAddress()));
-            transactionManager.msgReceived(dpid, msg);
+            removeClient(client);
         }
 
         @Override

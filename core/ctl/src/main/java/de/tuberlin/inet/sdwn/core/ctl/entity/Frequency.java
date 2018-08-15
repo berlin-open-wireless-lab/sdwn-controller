@@ -8,8 +8,8 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 
 public class Frequency implements SdwnFrequency {
 
-    private long freq;
-    private double maxTxPower;
+    private final long freq;
+    private final double maxTxPower;
 
     private Frequency(long freq, double maxTxPower) {
         this.freq = freq;

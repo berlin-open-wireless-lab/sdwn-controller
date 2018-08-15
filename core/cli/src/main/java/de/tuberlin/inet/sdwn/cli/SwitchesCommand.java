@@ -55,8 +55,9 @@ public class SwitchesCommand extends AbstractShellCommand {
             service.apsForSwitch(dpid).stream()
                     .filter(ap -> Arrays.equals(ap.nic().mac().toBytes(), nic.getMacAddr().getBytes()))
                     .forEach(ap -> {
-                        sb.append("\t\t\t- Name: ").append(ap.name()).append("\n");
+                        sb.append("\t\t\t- Interface: ").append(ap.name()).append("\n");
                         sb.append("\t\t\t- BSSID: ").append(ap.bssid().toString()).append("\n");
+                        sb.append("\t\t\t- SSID: ").append(ap.ssid()).append("\n");
                         sb.append("\t\t\t- Number: ").append(ap.portNumber()).append("\n");
                         sb.append("\t\t\t- Frequency: ").append(ap.frequency().hz())
                                 .append(" MHz")

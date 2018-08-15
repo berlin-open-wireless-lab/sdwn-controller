@@ -38,15 +38,6 @@ public class SetChannel extends AbstractShellCommand {
 
         int freq, beaconCount;
         Dpid dpid = new Dpid(switchDpidStr);
-        SdwnAccessPoint accessPoint = controller.aps().stream()
-                .filter(ap -> ap.nic().switchID().equals(dpid))
-                .filter(ap -> ap.name().equals(apStr))
-                .findFirst().orElse(null);
-
-        if (accessPoint == null) {
-            print("AP not found");
-            return;
-        }
 
         switch (freqBandStr) {
             case "2GHz":
@@ -73,7 +64,7 @@ public class SetChannel extends AbstractShellCommand {
             return;
         }
 
-        if (!controller.setChannel(dpid, accessPoint.portNumber(), freq, beaconCount))
-            print("An error occurred. See log for details.");
+        controller.setChannel(dpid, apStr, freq, beaconCount);
+        print("Transaction started. See log for details.");
     }
 }

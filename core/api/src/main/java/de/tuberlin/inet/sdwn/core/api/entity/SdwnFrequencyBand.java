@@ -40,6 +40,8 @@ public interface SdwnFrequencyBand extends SdwnEntity, Comparable<SdwnFrequencyB
      */
     boolean containsFrequency(long freq);
 
+    SdwnFrequency getFreq(int freq);
+
     @Override
     default SdwnEntity.Type type() {
         return SDWN_ENTITY_BAND;

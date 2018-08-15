@@ -8,4 +8,6 @@ public interface SdwnMobilityManager {
     void handOver(SdwnClient c, SdwnAccessPoint dst);
 
     void handOver(SdwnClient c, SdwnAccessPoint dst, long timeout);
+
+    void abortHandover(SdwnClient c);
 }

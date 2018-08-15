@@ -158,6 +158,6 @@ public class SdwnEntityStore {
             return;
         }
 
-        clients.remove(mac).disassoc();
+        clients.remove(mac);
     }
 }

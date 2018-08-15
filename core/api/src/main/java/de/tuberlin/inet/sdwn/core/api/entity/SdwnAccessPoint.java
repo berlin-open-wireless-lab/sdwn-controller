@@ -62,6 +62,22 @@ public interface SdwnAccessPoint extends SdwnEntity {
      */
     boolean clientIsAssociated(MacAddress mac);
 
+    /**
+     * Blacklist a client at the AP for a given time.
+     * @param mac client MAC addres
+     */
+    void blacklistClient(MacAddress mac);
+
+    /**
+     * Return {@code true} if the given client is blacklisted at the AP.
+     */
+    boolean clientIsBlacklisted(MacAddress mac);
+
+    /**
+     * Remove a client from the APs blacklist.
+     */
+    void clearClientBlacklisting(MacAddress mac);
+
     @Override
     default Type type() {
         return Type.SDWN_ENTITY_ACCESSPOINT;
