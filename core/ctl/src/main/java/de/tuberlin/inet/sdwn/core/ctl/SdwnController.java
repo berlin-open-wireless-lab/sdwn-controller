@@ -463,7 +463,7 @@ public class SdwnController implements SdwnCoreService {
             log.info("new Wireless Switch: {}", dpid);
             store.putRelatedSwitch(dpid, sw.relatedOfSwitch());
 
-            List<SdwnNic> nics = sw.nics().stream()
+            List<SdwnNic> nics = sw.nicEntities().stream()
                     .map(nicEntity -> Nic.fromOF(dpid, nicEntity, sw.sdwnEntities()))
                     .collect(Collectors.toList());
 
