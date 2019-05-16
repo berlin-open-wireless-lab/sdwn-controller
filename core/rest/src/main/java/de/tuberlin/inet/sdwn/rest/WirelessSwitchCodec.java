@@ -9,17 +9,17 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
 import org.onosproject.openflow.controller.Dpid;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class WirelessSwitchCodec extends JsonCodec<OpenFlowWirelessSwitch> {
+public class WirelessSwitchCodec extends JsonCodec<SdwnWirelessSwitch> {
 
     @Override
-    public ObjectNode encode(OpenFlowWirelessSwitch sw, CodecContext context) {
+    public ObjectNode encode(SdwnWirelessSwitch sw, CodecContext context) {
         checkNotNull(sw);
         SdwnCoreService service = context.getService(SdwnCoreService.class);
 
@@ -53,7 +53,7 @@ public class WirelessSwitchCodec extends JsonCodec<OpenFlowWirelessSwitch> {
     }
 
     @Override
-    public ArrayNode encode(Iterable<OpenFlowWirelessSwitch> switches, CodecContext context) {
+    public ArrayNode encode(Iterable<SdwnWirelessSwitch> switches, CodecContext context) {
         checkNotNull(switches);
         SdwnCoreService service = context.getService(SdwnCoreService.class);
 

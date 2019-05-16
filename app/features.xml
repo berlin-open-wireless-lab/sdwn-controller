@@ -3,7 +3,7 @@
     <feature name="${project.artifactId}" version="${project.version}"
              description="${project.description}">
         <feature>onos-api</feature>
-        <bundle>mvn:de.tuberlin.inet.sdwn/openflowj/3.1.0.sdwn-SNAPSHOT</bundle>
+
         <bundle>mvn:${project.groupId}/sdwn-core-api/${project.version}</bundle>
         <bundle>mvn:${project.groupId}/sdwn-core-ctl/${project.version}</bundle>
 

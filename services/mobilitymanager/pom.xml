@@ -14,7 +14,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <onos.version>1.10.0-SNAPSHOT</onos.version>
+        <onos.version>1.13.8</onos.version>
         <onos.app.name>de.tuberlin.inet.sdwn.mobility</onos.app.name>
         <onos.app.title>SDWN Client Mobility Manager</onos.app.title>
         <onos.app.origin>TU Berlin INET</onos.app.origin>
@@ -108,7 +108,7 @@
             <plugin>
                 <groupId>org.onosproject</groupId>
                 <artifactId>onos-maven-plugin</artifactId>
-                <version>1.10</version>
+                <version>1.12</version>
                 <executions>
                     <execution>
                         <id>cfg</id>

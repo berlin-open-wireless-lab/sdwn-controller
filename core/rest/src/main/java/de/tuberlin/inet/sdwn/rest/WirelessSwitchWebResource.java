@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import de.tuberlin.inet.sdwn.core.api.SdwnCoreService;
 import org.onosproject.openflow.controller.Dpid;
 import org.onosproject.openflow.controller.OpenFlowController;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 import org.onosproject.rest.AbstractWebResource;
 import org.slf4j.Logger;
 
@@ -35,9 +35,9 @@ public class WirelessSwitchWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSwitches() {
         OpenFlowController openFlowController = get(OpenFlowController.class);
-        List<OpenFlowWirelessSwitch> switches = new ArrayList<>();
+        List<SdwnWirelessSwitch> switches = new ArrayList<>();
         get(SdwnCoreService.class).switches()
-                .forEach(dpid -> switches.add((OpenFlowWirelessSwitch) openFlowController.getSwitch(dpid)));
+                .forEach(dpid -> switches.add((SdwnWirelessSwitch) openFlowController.getSwitch(dpid)));
 
         ArrayNode node = new WirelessSwitchCodec().encode(switches, this);
         return ok(node.toString()).build();
@@ -56,7 +56,7 @@ public class WirelessSwitchWebResource extends AbstractWebResource {
     public Response getSwitch(@PathParam("dpid") String dpidStr) {
         OpenFlowController controller = get(OpenFlowController.class);
         try {
-            OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) controller.getSwitch(new Dpid(dpidStr));
+            SdwnWirelessSwitch sw = (SdwnWirelessSwitch) controller.getSwitch(new Dpid(dpidStr));
             return ok(new WirelessSwitchCodec().encode(sw, this).toString()).build();
         } catch (ClassCastException e) {
             throw new IllegalArgumentException("Not a wireless switch.");

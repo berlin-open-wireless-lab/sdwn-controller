@@ -29,12 +29,6 @@
     <dependencies>
         <dependency>
             <groupId>org.onosproject</groupId>
-            <artifactId>onos-api</artifactId>
-            <version>${onos.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.onosproject</groupId>
             <artifactId>onos-protocols-openflow-api</artifactId>
             <version>${onos.version}</version>
         </dependency>
@@ -61,7 +55,7 @@
             <plugin>
                 <groupId>org.onosproject</groupId>
                 <artifactId>onos-maven-plugin</artifactId>
-                <version>1.10</version>
+                <version>1.12</version>
                 <executions>
                     <execution>
                         <id>app</id>

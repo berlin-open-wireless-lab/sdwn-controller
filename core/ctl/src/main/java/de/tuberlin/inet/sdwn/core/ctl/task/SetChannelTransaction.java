@@ -9,7 +9,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequency;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnFrequencyBand;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnNic;
 import org.onosproject.openflow.controller.Dpid;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnSetChannel;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -80,7 +80,7 @@ public class SetChannelTransaction implements SdwnTransaction {
 
     @Override
     public void start(long xid) {
-        OpenFlowWirelessSwitch sw = controller.getSwitch(dpid);
+        SdwnWirelessSwitch sw = controller.getSwitch(dpid);
         if (sw == null) {
             log.error("{} is unknown", dpid);
             return;

@@ -7,7 +7,7 @@ import de.tuberlin.inet.sdwn.core.api.SdwnTransactionAdapter;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import de.tuberlin.inet.sdwn.mobilitymanager.SdwnMobilityManager;
 import org.onosproject.openflow.controller.Dpid;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnAddClient;
 import org.projectfloodlight.openflow.types.MacAddress;
@@ -57,7 +57,7 @@ public class HandoverTransactionAddClient extends SdwnTransactionAdapter {
 
     @Override
     public void start(long xid) {
-        OpenFlowWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
+        SdwnWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
         checkNotNull(sw);
 
         // start the handover by dis-associating the client at its current AP

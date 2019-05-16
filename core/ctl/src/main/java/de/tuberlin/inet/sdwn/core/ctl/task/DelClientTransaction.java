@@ -7,7 +7,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFSdwnDelClient;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -41,7 +41,7 @@ public class DelClientTransaction extends SdwnTransactionAdapter {
 
     @Override
     public void start(long xid) {
-        OpenFlowWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
+        SdwnWirelessSwitch sw = controller.getSwitch(client.ap().nic().switchID());
         checkNotNull(sw);
 
         sw.sendMsg(sw.factory().buildSdwnDelClient()

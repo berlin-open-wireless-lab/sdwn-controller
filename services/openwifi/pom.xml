@@ -30,7 +30,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <onos.version>1.14.0-SNAPSHOT</onos.version>
+        <onos.version>1.13.8</onos.version>
         <onos.app.name>de.tuberlin.inet.sdwn.openwifi</onos.app.name>
         <onos.app.title>OpenWifi Integration</onos.app.title>
         <onos.app.origin>TU Berlin INET</onos.app.origin>
@@ -107,7 +107,7 @@
             <plugin>
                 <groupId>org.onosproject</groupId>
                 <artifactId>onos-maven-plugin</artifactId>
-                <version>1.10</version>
+                <version>1.12</version>
                 <executions>
                     <execution>
                         <id>cfg</id>

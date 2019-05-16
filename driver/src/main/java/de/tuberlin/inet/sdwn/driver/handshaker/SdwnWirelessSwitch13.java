@@ -1,15 +1,10 @@
 package de.tuberlin.inet.sdwn.driver.handshaker;
 
 import com.google.common.collect.ImmutableList;
-import org.onlab.packet.MacAddress;
 import org.onosproject.net.Device;
-import org.onosproject.net.PortNumber;
-import org.onosproject.net.device.AccessPointDescription;
-import org.onosproject.net.device.DefaultAccessPointDescription;
-import org.onosproject.net.device.PortDescription;
 import org.onosproject.openflow.controller.Dpid;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
-import org.onosproject.openflow.controller.driver.AbstractOpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
+import org.onosproject.openflow.controller.driver.AbstractOpenFlowSwitch;
 import org.onosproject.openflow.controller.driver.SwitchDriverSubHandshakeAlreadyStarted;
 import org.onosproject.openflow.controller.driver.SwitchDriverSubHandshakeCompleted;
 import org.onosproject.openflow.controller.driver.SwitchDriverSubHandshakeNotStarted;
@@ -47,8 +42,7 @@ import static org.projectfloodlight.openflow.protocol.OFSdwnAccesspointConfig.AP
  * The information comes in the form of SDWN entities which are stored by the
  * driver and can be retrieved using {@code sdwnEntities()}.
  */
-public class OpenFlowWirelessSwitch13 extends AbstractOpenFlowWirelessSwitch
-        implements OpenFlowWirelessSwitch {
+public class SdwnWirelessSwitch13 extends AbstractOpenFlowSwitch implements SdwnWirelessSwitch {
 
     private final AtomicBoolean handshakeComplete = new AtomicBoolean(false);
     private List<OFSdwnEntity> sdwnEntities = new ArrayList<>();

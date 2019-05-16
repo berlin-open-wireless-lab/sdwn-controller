@@ -7,7 +7,7 @@ import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openflow.controller.Dpid;
 import org.onosproject.openflow.controller.OpenFlowController;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 
 import java.util.Arrays;
 
@@ -36,7 +36,7 @@ public class SwitchesCommand extends AbstractShellCommand {
     }
 
     private void printSwitch(SdwnCoreService service, OpenFlowController controller, Dpid dpid) {
-        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) controller.getSwitch(dpid);
+        SdwnWirelessSwitch sw = (SdwnWirelessSwitch) controller.getSwitch(dpid);
         StringBuilder sb = new StringBuilder();
         sb.append("*\t").append(sw.getStringId()).append("\n");
         sb.append("\t- Channel: ").append(sw.channelId()).append("\n");

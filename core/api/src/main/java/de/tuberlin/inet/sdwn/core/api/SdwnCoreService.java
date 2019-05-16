@@ -5,7 +5,7 @@ import de.tuberlin.inet.sdwn.core.api.entity.SdwnAccessPoint;
 import de.tuberlin.inet.sdwn.core.api.entity.SdwnClient;
 import org.onlab.packet.MacAddress;
 import org.onosproject.openflow.controller.Dpid;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 
 import java.util.NoSuchElementException;
@@ -102,7 +102,7 @@ public interface SdwnCoreService {
      */
     boolean sendMessage(Dpid dpid, OFMessage msg);
 
-    OpenFlowWirelessSwitch getSwitch(Dpid dpid);
+    SdwnWirelessSwitch getSwitch(Dpid dpid);
 
     /**
      * Remove all state related to the given client from the controller. This

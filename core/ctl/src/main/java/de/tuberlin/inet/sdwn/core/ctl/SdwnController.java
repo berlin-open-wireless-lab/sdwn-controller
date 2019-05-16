@@ -58,7 +58,7 @@ import org.onosproject.openflow.controller.OpenFlowController;
 import org.onosproject.openflow.controller.OpenFlowMessageListener;
 import org.onosproject.openflow.controller.OpenFlowSwitch;
 import org.onosproject.openflow.controller.OpenFlowSwitchListener;
-import org.onosproject.openflow.controller.OpenFlowWirelessSwitch;
+import org.onosproject.openflow.controller.SdwnWirelessSwitch;
 import org.onosproject.openflow.controller.RoleState;
 import org.osgi.service.component.ComponentContext;
 import org.projectfloodlight.openflow.protocol.OFFactory;
@@ -282,14 +282,14 @@ public class SdwnController implements SdwnCoreService {
     }
 
     @Override
-    public OpenFlowWirelessSwitch getSwitch(Dpid dpid) {
+    public SdwnWirelessSwitch getSwitch(Dpid dpid) {
         checkNotNull(dpid);
         OpenFlowSwitch sw = controller.getSwitch(dpid);
 
-        if (sw == null || !(sw instanceof OpenFlowWirelessSwitch)) {
+        if (sw == null || !(sw instanceof SdwnWirelessSwitch)) {
             return null;
         }
-        return (OpenFlowWirelessSwitch) sw;
+        return (SdwnWirelessSwitch) sw;
     }
 
     @Override
@@ -318,7 +318,7 @@ public class SdwnController implements SdwnCoreService {
     public void blacklistClientAtAp(SdwnAccessPoint ap, MacAddress mac, long banTime) {
         checkNotNull(ap);
         checkNotNull(mac);
-        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        SdwnWirelessSwitch sw = switchForAP(ap);
         checkNotNull(sw);
 
         sw.sendMsg(sw.factory().buildSdwnBlacklistClient()
@@ -335,7 +335,7 @@ public class SdwnController implements SdwnCoreService {
     public void clearClientBlacklistingAtAp(SdwnAccessPoint ap, MacAddress mac) {
         checkNotNull(ap);
         checkNotNull(mac);
-        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        SdwnWirelessSwitch sw = switchForAP(ap);
         checkNotNull(sw);
 
         sw.sendMsg(sw.factory().buildSdwnBlacklistClient()
@@ -366,7 +366,7 @@ public class SdwnController implements SdwnCoreService {
 
         OpenFlowSwitch ofsw = controller.getSwitch(dpid);
 
-        if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+        if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof SdwnWirelessSwitch)) {
             log.error("Could not send message to {}: Not found or not connected", dpid);
             return false;
         }
@@ -422,7 +422,7 @@ public class SdwnController implements SdwnCoreService {
             return;
         }
 
-        OpenFlowWirelessSwitch sw = wirelessSwitchForDpid(dpid);
+        SdwnWirelessSwitch sw = wirelessSwitchForDpid(dpid);
         if (sw == null) {
             log.error("No switch found for DPID {}", dpid);
             return;
@@ -435,13 +435,13 @@ public class SdwnController implements SdwnCoreService {
         sw.sendMsg(reply);
     }
 
-    private OpenFlowWirelessSwitch wirelessSwitchForDpid(Dpid dpid) {
+    private SdwnWirelessSwitch wirelessSwitchForDpid(Dpid dpid) {
         OpenFlowSwitch ofSw = controller.getSwitch(dpid);
-        if (ofSw == null || !ofSw.isConnected() || !(ofSw instanceof OpenFlowWirelessSwitch)) {
+        if (ofSw == null || !ofSw.isConnected() || !(ofSw instanceof SdwnWirelessSwitch)) {
             return null;
         }
 
-        return (OpenFlowWirelessSwitch) ofSw;
+        return (SdwnWirelessSwitch) ofSw;
     }
 
     @Override
@@ -456,11 +456,11 @@ public class SdwnController implements SdwnCoreService {
         }
 
         OpenFlowSwitch ofsw = controller.getSwitch(dpid);
-        if (ofsw == null || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+        if (ofsw == null || !(ofsw instanceof SdwnWirelessSwitch)) {
             return false;
         }
 
-        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) ofsw;
+        SdwnWirelessSwitch sw = (SdwnWirelessSwitch) ofsw;
         sw.sendMsg(msg);
         return true;
     }
@@ -477,11 +477,11 @@ public class SdwnController implements SdwnCoreService {
         public void switchAdded(Dpid dpid) {
             OpenFlowSwitch ofsw = controller.getSwitch(dpid);
 
-            if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof OpenFlowWirelessSwitch)) {
+            if (ofsw == null || !ofsw.isConnected() || !(ofsw instanceof SdwnWirelessSwitch)) {
                 return;
             }
 
-            OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) ofsw;
+            SdwnWirelessSwitch sw = (SdwnWirelessSwitch) ofsw;
 
             log.info("new Wireless Switch: {}", dpid);
             store.putRelatedSwitch(dpid, sw.relatedOfSwitch());
@@ -529,7 +529,7 @@ public class SdwnController implements SdwnCoreService {
         }
     }
 
-    private OpenFlowWirelessSwitch switchForAP(SdwnAccessPoint ap) {
+    private SdwnWirelessSwitch switchForAP(SdwnAccessPoint ap) {
         if (ap.nic() == null) {
             return null;
         }
@@ -539,7 +539,7 @@ public class SdwnController implements SdwnCoreService {
             return null;
         }
 
-        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) controller.getSwitch(swDpid);
+        SdwnWirelessSwitch sw = (SdwnWirelessSwitch) controller.getSwitch(swDpid);
         if (sw == null || !sw.isConnected()) {
             return null;
         }
@@ -582,7 +582,7 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        SdwnWirelessSwitch sw = switchForAP(ap);
         if (sw == null) {
             return false;
         }
@@ -655,7 +655,7 @@ public class SdwnController implements SdwnCoreService {
             return false;
         }
 
-        OpenFlowWirelessSwitch sw = switchForAP(ap);
+        SdwnWirelessSwitch sw = switchForAP(ap);
         if (sw == null) {
             log.error("Could not delete client {} from AP {} on {}: Switch unknown or not connected.",
                     client.macAddress(), ap.name(), ap.nic().switchID());
@@ -690,7 +690,7 @@ public class SdwnController implements SdwnCoreService {
             return;
         }
 
-        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) controller.getSwitch(swDpid);
+        SdwnWirelessSwitch sw = (SdwnWirelessSwitch) controller.getSwitch(swDpid);
         if (sw == null || !sw.isConnected()) {
             return;
         }
@@ -712,7 +712,7 @@ public class SdwnController implements SdwnCoreService {
     }
 
     public void delLvap(Dpid dpid, MacAddress bssid) {
-        OpenFlowWirelessSwitch sw = (OpenFlowWirelessSwitch) controller.getSwitch(dpid);
+        SdwnWirelessSwitch sw = (SdwnWirelessSwitch) controller.getSwitch(dpid);
         if (sw == null || !sw.isConnected()) {
             return;
         }
