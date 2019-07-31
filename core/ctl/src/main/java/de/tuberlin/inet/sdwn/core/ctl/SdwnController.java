@@ -770,7 +770,7 @@ public class SdwnController implements SdwnCoreService {
                 case ASSOC:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
                         responseAction = e.listener.receivedAssocRequest(MacAddress.valueOf(msg.getAddr().getBytes()),
-                                ap, msg.getXid(), msg.getSsi(), msg.getFreq());
+                                ap, msg.getXid(), msg.getRssi(), msg.getFreq());
 
                         if ((responseAction != lastResponse) && (e.priority > lastPriority)) {
                             lastResponse = responseAction;
@@ -781,7 +781,7 @@ public class SdwnController implements SdwnCoreService {
                 case AUTH:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
                         responseAction = e.listener.receivedAuthRequest(MacAddress.valueOf(msg.getAddr().getBytes()),
-                                ap, msg.getXid(), msg.getSsi(), msg.getFreq());
+                                ap, msg.getXid(), msg.getRssi(), msg.getFreq());
 
                         if ((responseAction != lastResponse) && (e.priority > lastPriority)) {
                             lastResponse = responseAction;
@@ -792,7 +792,7 @@ public class SdwnController implements SdwnCoreService {
                 case PROBE:
                     for (MgmtFrameListenerList.MgmtFrameListenerListEntry e : mgmtFrameListeners.list) {
                         responseAction = e.listener.receivedProbeRequest(MacAddress.valueOf(msg.getAddr().getBytes()),
-                                ap, msg.getXid(), msg.getSsi(), msg.getFreq());
+                                ap, msg.getXid(), msg.getRssi(), msg.getFreq());
 
                         if ((responseAction != lastResponse) && (e.priority > lastPriority)) {
                             lastResponse = responseAction;
