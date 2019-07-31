@@ -94,6 +94,8 @@ public class TransactionManager {
                     ctx.timer.stop();
                     transactions.remove(ctx.xid);
                     ctx.transaction.done();
+
+                    log.info("Transaction done {}", ctx);
                     break;
             }
         }
