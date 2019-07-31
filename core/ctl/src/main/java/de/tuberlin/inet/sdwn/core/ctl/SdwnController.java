@@ -242,6 +242,13 @@ public class SdwnController implements SdwnCoreService {
         clientListeners.remove(listener);
     }
 
+    /**
+     * Register an 802.11 Management Frame listener.
+     *
+     * @param listener the listener
+     * @param priority the listener's priority regarding decisions about the processed frame
+     * @throws IllegalArgumentException if the listener or another one with the same priority is already registered.
+     */
     @Override
     public void register80211MgmtFrameListener(Sdwn80211MgmtFrameListener listener, int priority) throws IllegalArgumentException {
         mgmtFrameListeners.addListener(listener, priority);

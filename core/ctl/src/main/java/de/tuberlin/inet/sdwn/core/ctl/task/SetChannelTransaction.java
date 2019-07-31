@@ -75,7 +75,6 @@ public class SetChannelTransaction implements SdwnTransaction {
                 dpid, ap.name(), String.format("%1.3f", (double) notification.getFrequency() / 1000.0),
                 Ieee80211Channels.frequencyToChannel(notification.getFrequency()));
         return DONE;
-
     }
 
     @Override
