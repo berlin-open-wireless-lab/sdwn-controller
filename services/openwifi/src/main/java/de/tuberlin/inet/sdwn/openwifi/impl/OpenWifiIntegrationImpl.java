@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
+import de.tuberlin.inet.sdwn.openwifi.api.OpenWifiConfig;
 import de.tuberlin.inet.sdwn.openwifi.api.OpenWifiIntegrationService;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -105,17 +106,12 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
     }
 
     @Override
-    public boolean register(String uri, String apiKey, IpAddress addr, int port, String name, String ubusPath) throws MalformedURLException {
-        return register(uri, apiKey, addr, port, capabilityName, capabilityMatch, capabilityScript, ubusPath);
-    }
-
-    @Override
-    public boolean register(String uri, String apiKey, IpAddress addr, int port, String capName, String capMatch, String capScript, String ubusPath) throws MalformedURLException {
+    public boolean register(String uri, String apiKey, IpAddress addr, int port, OpenWifiConfig config) throws MalformedURLException {
         OpenWifiRestClient client = newOpenWifiRestClient(uri, apiKey);
         String id;
 
         log.info("Registering with OpenWifi at {}", uri);
-        Response response = client.register(addr, port, capName, capMatch, capScript, ubusPath);
+        Response response = client.register(addr, port, config);
 
         if (response.getStatus() != 200) {
             log.error("Registration failed: {}", response);
@@ -321,7 +317,7 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
             this.apiKey = apiKey;
         }
 
-        Response register(IpAddress addr, int port, String name, String capMatch, String capScript, String ubusPath) {
+        Response register(IpAddress addr, int port, OpenWifiConfig config) {
             Client client = ClientBuilder.newBuilder()
                     .register(JsonBodyWriter.class)
                     .build();
@@ -330,13 +326,13 @@ public class OpenWifiIntegrationImpl implements OpenWifiIntegrationService {
             ArrayNode queries = request.putArray("queries");
             createQuery(queries, "ipaddr", addr.toString());
             createQuery(queries, "port", String.valueOf(port));
-            if (ubusPath != null) {
-                createQuery(queries, "ubuspath", ubusPath);
+            if (config.getUbusPath() != null) {
+                createQuery(queries, "ubuspath", config.getUbusPath());
             }
 
-            request.put("name", name)
-                    .put("capability_match", capMatch)
-                    .put("capability_script", capScript);
+            request.put("name", config.getName())
+                    .put("capability_match", config.getCapabilityMatch())
+                    .put("capability_script", config.getCapabilityScript());
 
             return client.target(String.format("%s/service?key=%s", url.toString(), apiKey))
                     .request(MediaType.TEXT_PLAIN_TYPE)

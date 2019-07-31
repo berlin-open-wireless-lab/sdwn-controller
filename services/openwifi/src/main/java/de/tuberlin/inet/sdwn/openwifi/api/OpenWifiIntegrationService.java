@@ -29,9 +29,7 @@ import java.util.Set;
  */
 public interface OpenWifiIntegrationService {
 
-    boolean register(String uri, String apiKey, IpAddress addr, int port, String name, String ubusPath) throws MalformedURLException;
-
-    boolean register(String uri, String apiKey, IpAddress addr, int port, String name, String capabilityMatch, String capabilityScript, String ubusPath) throws MalformedURLException;
+    boolean register(String uri, String apiKey, IpAddress addr, int port, OpenWifiConfig config) throws MalformedURLException;
 
     boolean unregister();
 

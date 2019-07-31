@@ -1,5 +1,6 @@
 package de.tuberlin.inet.sdwn.openwifi.cli;
 
+import de.tuberlin.inet.sdwn.openwifi.api.OpenWifiConfig;
 import de.tuberlin.inet.sdwn.openwifi.api.OpenWifiIntegrationService;
 import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
@@ -32,11 +33,13 @@ public class RegisterCommand extends AbstractShellCommand {
     private String capabilityName = null;
 
     @Argument(index = 5, name = "CAPABILITY-MATCH",
-            description = "If the output of CAPABILITY_SCRIPT matches CAPABILITY_MATCH when executed on the switch, CAPABILITY_NAME is announced in OpenWifi.")
+            description = "If the output of CAPABILITY_SCRIPT matches CAPABILITY_MATCH when executed on the switch, CAPABILITY_NAME is announced in OpenWifi.",
+            required = true)
     private String capabilityMatch = null;
 
     @Argument(index = 6, name = "CAPABILITY-SCRIPT",
-            description = "If the output of CAPABILITY_SCRIPT matches CAPABILITY_MATCH when executed on the switch, CAPABILITY_NAME is announced in OpenWifi.")
+            description = "If the output of CAPABILITY_SCRIPT matches CAPABILITY_MATCH when executed on the switch, CAPABILITY_NAME is announced in OpenWifi.",
+            required = true)
     private String capabilityScript = null;
 
     @Argument(index = 7, name = "UBUS-PATH", description = "Ubus path to use on the wireless switch")
@@ -47,25 +50,11 @@ public class RegisterCommand extends AbstractShellCommand {
         OpenWifiIntegrationService service = get(OpenWifiIntegrationService.class);
 
         try {
-            boolean success;
-
-            if (!(capabilityMatch != null && capabilityScript != null)) {
-                success = service.register(url,
-                                           apiKey,
-                                           IpAddress.valueOf(controllerIpStr.equals("localhost") ? "127.0.0.1" : controllerIpStr),
-                                           Integer.parseInt(controllerPortStr),
-                                           capabilityName,
-                                           capabilityMatch,
-                                           capabilityScript,
-                                           ubusPath);
-            } else {
-                success = service.register(url,
-                                           apiKey,
-                                           IpAddress.valueOf(controllerIpStr.equals("localhost") ? "127.0.0.1" : controllerIpStr),
-                                           Integer.parseInt(controllerPortStr),
-                                           capabilityName,
-                                           ubusPath);
-            }
+            boolean success = service.register(url,
+                    apiKey,
+                    IpAddress.valueOf(controllerIpStr.equals("localhost") ? "127.0.0.1" : controllerIpStr),
+                    Integer.parseInt(controllerPortStr),
+                    new OpenWifiConfig(capabilityName, capabilityMatch, capabilityScript, ubusPath));
 
             if (!success) {
                 print("ERROR. See log for details.");
